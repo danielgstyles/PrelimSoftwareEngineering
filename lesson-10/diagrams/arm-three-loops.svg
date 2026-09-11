@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" width="1000" height="500" role="img" aria-label="The MeArm analysed as three simultaneous loops: the servo's own internal closed loop, the open loop Lesson 13 to 15 code, and the Lesson 17 to 18 LDR routine closed on pad occupancy">
+  <defs>
+    <marker id="a-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4ECDC4"/>
+    </marker>
+    <marker id="a-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF6B6B"/>
+    </marker>
+    <marker id="a-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#FFB347"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="500" fill="#0D1B2A"/>
+
+  <text x="30" y="36" font-family="'Space Mono', monospace" font-size="15" letter-spacing="3" fill="#00E5FF">ONE ARM · THREE LOOPS · ALL TRUE AT ONCE</text>
+
+  <!-- ROW 1 -->
+  <text x="30" y="86" font-family="Inter, 'Segoe UI', sans-serif" font-size="16" font-weight="700" fill="#F0F6FF">1 · Inside each servo</text>
+  <text x="30" y="110" font-family="Inter, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#4ECDC4">CLOSED</text>
+  <text x="30" y="132" font-family="Inter, 'Segoe UI', sans-serif" font-size="12.5" fill="#8DA9C4">not by you, and not</text>
+  <text x="30" y="150" font-family="Inter, 'Segoe UI', sans-serif" font-size="12.5" fill="#8DA9C4">in your code</text>
+
+  <rect x="270" y="76" width="150" height="50" fill="#122335" stroke="#4ECDC4" stroke-width="2" rx="3"/>
+  <text x="345" y="106" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#F0F6FF">Commanded angle</text>
+
+  <rect x="450" y="76" width="160" height="50" fill="#122335" stroke="#4ECDC4" stroke-width="2" rx="3"/>
+  <text x="530" y="106" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#F0F6FF">Compare, in servo</text>
+
+  <rect x="640" y="76" width="140" height="50" fill="#122335" stroke="#4ECDC4" stroke-width="2" rx="3"/>
+  <text x="710" y="106" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#F0F6FF">Motor + gears</text>
+
+  <rect x="810" y="76" width="150" height="50" fill="#122335" stroke="#4ECDC4" stroke-width="2" rx="3"/>
+  <text x="885" y="106" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#F0F6FF">Output shaft</text>
+
+  <line x1="422" y1="101" x2="446" y2="101" stroke="#4ECDC4" stroke-width="2" marker-end="url(#a-green)"/>
+  <line x1="612" y1="101" x2="636" y2="101" stroke="#4ECDC4" stroke-width="2" marker-end="url(#a-green)"/>
+  <line x1="782" y1="101" x2="806" y2="101" stroke="#4ECDC4" stroke-width="2" marker-end="url(#a-green)"/>
+  <path d="M 885 128 L 885 158 L 530 158 L 530 130" fill="none" stroke="#4ECDC4" stroke-width="2" marker-end="url(#a-green)"/>
+  <text x="710" y="152" text-anchor="middle" font-family="'Space Mono', monospace" font-size="12" fill="#4ECDC4">potentiometer on the shaft</text>
+
+  <line x1="30" y1="180" x2="970" y2="180" stroke="#1E3A52" stroke-width="1"/>
+
+  <!-- ROW 2 -->
+  <text x="30" y="222" font-family="Inter, 'Segoe UI', sans-serif" font-size="16" font-weight="700" fill="#F0F6FF">2 · Your Lesson 13–15 code</text>
+  <text x="30" y="246" font-family="Inter, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#FF6B6B">OPEN</text>
+  <text x="30" y="268" font-family="Inter, 'Segoe UI', sans-serif" font-size="12.5" fill="#8DA9C4">at the program level</text>
+
+  <rect x="270" y="212" width="190" height="50" fill="#122335" stroke="#FF6B6B" stroke-width="2" rx="3"/>
+  <text x="365" y="242" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#F0F6FF">Your code writes an angle</text>
+
+  <rect x="490" y="212" width="130" height="50" fill="#122335" stroke="#FF6B6B" stroke-width="2" rx="3"/>
+  <text x="555" y="242" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#F0F6FF">Servo</text>
+
+  <rect x="650" y="212" width="230" height="50" fill="#122335" stroke="#FF6B6B" stroke-width="2" rx="3"/>
+  <text x="765" y="242" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#F0F6FF">The joint moves — or doesn't</text>
+
+  <line x1="462" y1="237" x2="486" y2="237" stroke="#FF6B6B" stroke-width="2" marker-end="url(#a-red)"/>
+  <line x1="622" y1="237" x2="646" y2="237" stroke="#FF6B6B" stroke-width="2" marker-end="url(#a-red)"/>
+  <text x="575" y="292" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#FF6B6B">Nothing measures whether the joint got there, and nothing in your program changes if it didn't.</text>
+
+  <line x1="30" y1="318" x2="970" y2="318" stroke="#1E3A52" stroke-width="1"/>
+
+  <!-- ROW 3 -->
+  <text x="30" y="360" font-family="Inter, 'Segoe UI', sans-serif" font-size="16" font-weight="700" fill="#F0F6FF">3 · Lesson 17–18 code</text>
+  <text x="30" y="384" font-family="Inter, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#FFB347">CLOSED — on pad occupancy</text>
+  <text x="30" y="406" font-family="Inter, 'Segoe UI', sans-serif" font-size="12.5" fill="#8DA9C4">not on arm position</text>
+
+  <rect x="270" y="350" width="150" height="50" fill="#122335" stroke="#FFB347" stroke-width="2" rx="3"/>
+  <text x="345" y="380" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#F0F6FF">Read the LDR</text>
+
+  <rect x="450" y="350" width="200" height="50" fill="#122335" stroke="#FFB347" stroke-width="2" rx="3"/>
+  <text x="550" y="380" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#F0F6FF">Is the pad covered?</text>
+
+  <rect x="680" y="350" width="230" height="50" fill="#122335" stroke="#FFB347" stroke-width="2" rx="3"/>
+  <text x="795" y="380" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="13.5" fill="#F0F6FF">Run the pick-and-place</text>
+
+  <line x1="422" y1="375" x2="446" y2="375" stroke="#FFB347" stroke-width="2" marker-end="url(#a-amber)"/>
+  <line x1="652" y1="375" x2="676" y2="375" stroke="#FFB347" stroke-width="2" marker-end="url(#a-amber)"/>
+  <path d="M 795 402 L 795 432 L 345 432 L 345 404" fill="none" stroke="#FFB347" stroke-width="2" marker-end="url(#a-amber)"/>
+  <text x="570" y="426" text-anchor="middle" font-family="'Space Mono', monospace" font-size="12" fill="#FFB347">sense again</text>
+
+  <text x="500" y="478" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="15" fill="#00E5FF">"Is the arm closed loop?" has no answer. "Closed loop on <tspan font-style="italic">what</tspan>?" does.</text>
+</svg>

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" width="1000" height="420" font-family="Inter, sans-serif" role="img" aria-label="A table of shrinking errors multiplied by a gain of two, showing the control signal falling below the minimum the servo can act on.">
+  <rect x="0" y="0" width="1000" height="420" fill="#0D1B2A"/>
+
+  <g font-family="Space Mono, monospace" font-size="12.5" fill="#00E5FF">
+    <text x="60" y="42">ERROR (DEGREES)</text>
+    <text x="300" y="42">× k = 2</text>
+    <text x="470" y="42">CONTROL SIGNAL</text>
+    <text x="720" y="42">DOES THE SERVO MOVE?</text>
+  </g>
+  <line x1="50" y1="54" x2="950" y2="54" stroke="#1E3A52" stroke-width="1.5"/>
+
+  <!-- row 1 -->
+  <g>
+    <text x="60" y="94" fill="#F0F6FF" font-size="17" font-weight="600">40</text>
+    <text x="300" y="94" fill="#8DA9C4" font-size="15">→</text>
+    <text x="470" y="94" fill="#F0F6FF" font-size="17" font-weight="600">80</text>
+    <rect x="520" y="80" width="160" height="18" fill="#4ECDC4" rx="2"/>
+    <text x="720" y="94" fill="#4ECDC4" font-size="14.5">Yes — a big, fast correction</text>
+  </g>
+  <!-- row 2 -->
+  <g>
+    <text x="60" y="144" fill="#F0F6FF" font-size="17" font-weight="600">10</text>
+    <text x="300" y="144" fill="#8DA9C4" font-size="15">→</text>
+    <text x="470" y="144" fill="#F0F6FF" font-size="17" font-weight="600">20</text>
+    <rect x="520" y="130" width="40" height="18" fill="#4ECDC4" rx="2"/>
+    <text x="720" y="144" fill="#4ECDC4" font-size="14.5">Yes — a gentler correction</text>
+  </g>
+  <!-- row 3 -->
+  <g>
+    <text x="60" y="194" fill="#F0F6FF" font-size="17" font-weight="600">1</text>
+    <text x="300" y="194" fill="#8DA9C4" font-size="15">→</text>
+    <text x="470" y="194" fill="#F0F6FF" font-size="17" font-weight="600">2</text>
+    <rect x="520" y="180" width="4" height="18" fill="#FFB347" rx="1"/>
+    <text x="720" y="194" fill="#FFB347" font-size="14.5">Only just</text>
+  </g>
+  <!-- row 4 -->
+  <g>
+    <rect x="50" y="216" width="900" height="44" fill="#122335" rx="4"/>
+    <text x="60" y="244" fill="#F0F6FF" font-size="17" font-weight="600">0.2</text>
+    <text x="300" y="244" fill="#8DA9C4" font-size="15">→</text>
+    <text x="470" y="244" fill="#FF6B6B" font-size="17" font-weight="600">0.4</text>
+    <text x="720" y="244" fill="#FF6B6B" font-size="14.5">No — nothing happens at all</text>
+  </g>
+
+  <!-- number line -->
+  <text x="50" y="306" fill="#8DA9C4" font-size="13">Where those last two signals sit against the smallest signal this servo can act on:</text>
+  <line x1="90" y1="350" x2="890" y2="350" stroke="#8DA9C4" stroke-width="1.5"/>
+  <g font-family="Space Mono, monospace" font-size="12" fill="#8DA9C4">
+    <line x1="90" y1="344" x2="90" y2="356" stroke="#8DA9C4" stroke-width="1.5"/><text x="86" y="376">0</text>
+    <line x1="357" y1="344" x2="357" y2="356" stroke="#8DA9C4" stroke-width="1.5"/><text x="353" y="376">1</text>
+    <line x1="623" y1="344" x2="623" y2="356" stroke="#8DA9C4" stroke-width="1.5"/><text x="619" y="376">2</text>
+    <line x1="890" y1="344" x2="890" y2="356" stroke="#8DA9C4" stroke-width="1.5"/><text x="886" y="376">3</text>
+  </g>
+
+  <!-- threshold -->
+  <line x1="357" y1="312" x2="357" y2="350" stroke="#FF6B6B" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <text x="365" y="324" fill="#FF6B6B" font-size="12.5">minimum signal the servo can act on</text>
+
+  <!-- markers -->
+  <circle cx="623" cy="350" r="7" fill="#FFB347"/>
+  <text x="600" y="404" fill="#FFB347" font-size="13">signal 2 — moves</text>
+  <circle cx="197" cy="350" r="7" fill="#FF6B6B"/>
+  <text x="140" y="404" fill="#FF6B6B" font-size="13">signal 0.4 — stuck</text>
+</svg>

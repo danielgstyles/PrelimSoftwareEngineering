@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 10 — Open and Closed Loop Control</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+
+<header class="site-header">
+  <div class="eyebrow">Programming Mechatronics · Lesson 10 · Self-paced</div>
+  <h1>Open and Closed Loop Control</h1>
+  <p class="sub">Does the system check its own work?</p>
+  <button id="reset-btn" class="reset-btn" type="button">Reset my progress</button>
+</header>
+
+<nav class="section-nav" aria-label="Section navigation">
+  <ol id="nav-list"></ol>
+</nav>
+
+<main id="app">
+
+  <!-- ============================================================ 1 -->
+  <section class="site-section" id="sec-1" data-title="Start here">
+    <div class="eyebrow">Before we start</div>
+    <h2>This is the one people get wrong</h2>
+    <blockquote class="def-quote red">The most common mistake in this topic is deciding that <strong>anything automatic, electronic or modern</strong> must be closed loop. It isn't. Plenty of systems act without ever checking the result.</blockquote>
+
+    <div class="field-block">
+      <label for="q-hook">Name one machine that you think <strong>checks its own work</strong> as it runs — and one that you think just does what it was told and never checks. Say in a few words why.</label>
+      <textarea id="q-hook" data-store="hook" rows="3" placeholder="Type a quick answer..."></textarea>
+      <p class="note-small" data-summary-skip>No marking, and you don't need any of this lesson's vocabulary to answer it. You will come back to this at the end and decide whether you still agree with yourself.</p>
+    </div>
+
+    <div class="li-sc-grid">
+      <div class="li-box">
+        <h3>Learning intentions</h3>
+        <ul>
+          <li><strong>Define</strong> open loop and closed loop control, and represent each as a diagram</li>
+          <li><strong>Apply</strong> a two-part test to classify a real system, instead of guessing</li>
+          <li><strong>Explain</strong> how the error is determined in a closed loop control algorithm</li>
+          <li><strong>Justify</strong> a choice of open or closed loop control for a specific job</li>
+        </ul>
+      </div>
+      <div class="sc-box">
+        <h3>Success criteria</h3>
+        <ul>
+          <li>Classify a system <em>and</em> name the variable you classified it on</li>
+          <li>Name a system that is full of sensors and still open loop</li>
+          <li>Give one real disadvantage of closed loop control</li>
+          <li>Say which parts of our own arm are open loop and which are closed</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="eyebrow">Where this sits</div>
+    <h2>The middle of three theory lessons</h2>
+    <div class="cards-3">
+      <div class="mini-card"><h3>Lesson 9 — done</h3>A control algorithm reads sensors, computes, and outputs to actuators. You met <strong>setpoint</strong> (the desired state) and <strong>error</strong> (the gap between the setpoint and the current state).</div>
+      <div class="mini-card green"><h3>Lesson 10 — today</h3>Does the system <strong>measure its own output</strong> and change what it does because of that measurement? That single question separates open loop from closed loop.</div>
+      <div class="mini-card amber"><h3>Lesson 11 — next</h3>Once you have closed the loop, <em>what do you actually do about the error?</em> On/off, proportional, and PID.</div>
+    </div>
+
+    <blockquote class="def-quote">By the end of this lesson, the answer to "is this closed loop?" should never be a guess. It should be the result of <strong>two specific questions</strong> you ask in order — and you will be able to say what those questions are.</blockquote>
+
+    <button class="next-btn" data-next="sec-2" type="button">Start →</button>
+  </section>
+
+  <!-- ============================================================ 2 -->
+  <section class="site-section" id="sec-2" data-title="Two definitions">
+    <div class="eyebrow">Part 1 · Definition</div>
+    <h2>Open loop control</h2>
+    <blockquote class="def-quote">In <strong>open loop</strong> control, the control action does <em>not</em> depend on the output. The system acts on its instruction, and never measures whether the result was achieved. Nothing comes back.</blockquote>
+
+    <div class="eyebrow">First — three words the diagrams use</div>
+    <div class="cards-3">
+      <div class="mini-card"><h3>Sensor</h3>A part that <strong>measures</strong> something physical and turns it into a number the system can use — a temperature, a distance, how much light is falling on it. It only ever <em>reports</em>; it never moves anything.</div>
+      <div class="mini-card green"><h3>Actuator</h3>A part that <strong>does</strong> something physical — a motor, a servo, a heating element, a valve. It only ever <em>acts</em>; it never measures anything.</div>
+      <div class="mini-card amber"><h3>Controller</h3>The part that <strong>decides</strong>. On our arm this is the Arduino running your code. It takes in whatever information it has and works out what to tell the actuators to do.</div>
+    </div>
+    <p class="note-small">This whole lesson comes down to one question about those three: <em>does the controller ever get told, by a sensor, what the actuator actually achieved?</em></p>
+
+    <blockquote class="def-quote amber"><strong>How to read the diagram below.</strong> Each box is a stage in the system, not a physical object — a box can be a part, a person, or a few lines of code. Each arrow means "this feeds into that", and the arrowhead shows which way the information or the action travels. Read it left to right, like a sentence.</blockquote>
+    <p data-summary-skip>Click each block in the diagram to see what it does.</p>
+
+    <div class="diagram-wrap diagram-breakout">
+      <img src="diagrams/open-loop-block.svg" alt="Open loop block diagram: setpoint, controller, actuator, output, connected left to right with no return path." class="loop-diagram">
+      <button class="hotspot" style="left:3%;top:30.4%;width:19%;height:33.6%;" data-reveal-hotspot="hs-setpoint" type="button" aria-label="Setpoint"></button>
+      <button class="hotspot" style="left:28%;top:30.4%;width:19%;height:33.6%;" data-reveal-hotspot="hs-controller" type="button" aria-label="Controller"></button>
+      <button class="hotspot" style="left:53%;top:30.4%;width:19%;height:33.6%;" data-reveal-hotspot="hs-actuator" type="button" aria-label="Actuator"></button>
+      <button class="hotspot" style="left:78%;top:30.4%;width:19%;height:33.6%;" data-reveal-hotspot="hs-output" type="button" aria-label="Output"></button>
+    </div>
+    <div class="hotspot-note" id="hs-setpoint" hidden><strong>Setpoint</strong> — the desired state of the system. What you asked for: 90 seconds, 180 °C, 100 km/h.</div>
+    <div class="hotspot-note" id="hs-controller" hidden><strong>Controller</strong> — decides the control action. In an open loop system it decides using the instruction alone, because it has nothing else to go on.</div>
+    <div class="hotspot-note" id="hs-actuator" hidden><strong>Actuator</strong> — the part that physically does something: a heating element, a motor, a servo.</div>
+    <div class="hotspot-note" id="hs-output" hidden><strong>Output</strong> — what actually happened. In an open loop system nobody ever finds out what this was.</div>
+
+    <div class="cards-3">
+      <div class="mini-card"><h3>Toaster on a timer</h3>Runs the element for 90 seconds. It has no idea whether the bread came out toasted, burnt, or still frozen.</div>
+      <div class="mini-card green"><h3>Why anyone would build this</h3>Simple, cheap, predictable, and <strong>impossible to make unstable</strong>. If the relationship between input and output is reliable, open loop is the right answer, not a lazy one.</div>
+    </div>
+
+    <div class="quiz-block">
+      <p><strong>Quick check:</strong> the toaster's timer runs out and the toast pops up. What does the toaster know about the bread?</p>
+      <div class="single-select" id="ss-toaster" data-correct="nothing" data-explain="The timer is the whole control system. Nothing about the bread is ever measured, so nothing about the toaster’s behaviour can depend on it.">
+        <button data-value="nothing" type="button">Nothing — it never measured the bread</button>
+        <button data-value="browned" type="button">That it is browned enough</button>
+        <button data-value="temp" type="button">Its surface temperature</button>
+      </div>
+      <div class="feedback" id="ss-toaster-feedback" hidden></div>
+    </div>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Part 1 · Definition</div>
+    <h2>Closed loop control</h2>
+    <blockquote class="def-quote">In <strong>closed loop</strong> control, a sensor measures the actual output, and that measurement is fed back and compared against the setpoint. The <strong>difference is the error</strong>, and the controller acts on the error — not on the original instruction alone.</blockquote>
+
+    <div class="cards-3">
+      <div class="mini-card amber"><h3>Oven with a thermostat</h3>Set 180 °C. It measures the actual air temperature, and switches the element on or off depending on how far off it is.</div>
+      <div class="mini-card"><h3>Two blocks the open loop diagram doesn't have</h3>A <strong>sensor</strong> on the output, and a <strong>comparison</strong> that the measurement returns to. The error is formed at that comparison.</div>
+      <div class="mini-card green"><h3>The feedback path is the loop</h3>That returning line is literally what the word "closed" refers to. Remove it and the loop is open.</div>
+    </div>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Part 1 · Build it</div>
+    <h2>Close the loop yourself</h2>
+    <p data-summary-skip>Here is the open loop chain again, with two blocks missing. Using the description above, work out what goes in each one.</p>
+    <p data-summary-skip><strong>Drag</strong> each chip into the box it belongs in (or click a chip, then click a box — same result). One chip belongs in neither box. Place your chips, then check.</p>
+
+    <div class="loop-exercise diagram-breakout">
+      <img src="diagrams/closed-loop-blank.svg" alt="Incomplete closed loop block diagram with two empty dashed boxes, (a) in the forward chain and (b) below it." id="loop-image" class="loop-diagram">
+      <button class="loop-target" id="loop-a" style="left:21.5%;top:21.05%;width:20%;height:24.21%;" data-answer="Comparison" type="button" aria-label="Drop target (a)" title="Drag a chip here, or click a chip then click here"></button>
+      <button class="loop-target" id="loop-b" style="left:60%;top:67.89%;width:24%;height:18.95%;" data-answer="Sensor" type="button" aria-label="Drop target (b)" title="Drag a chip here, or click a chip then click here"></button>
+    </div>
+    <div class="chip-row" id="loop-chips">
+      <button class="chip" draggable="true" data-label="Sensor" type="button">Sensor — measures the output</button>
+      <button class="chip" draggable="true" data-label="Timer" type="button">Timer — a fixed delay</button>
+      <button class="chip" draggable="true" data-label="Comparison" type="button">Comparison — the error is formed here</button>
+    </div>
+    <div class="selected-note" id="loop-selected-note"></div>
+    <button class="check-btn" id="loop-check-btn" type="button">Check my answer</button>
+    <div class="feedback" id="loop-feedback" hidden></div>
+
+    <div class="quiz-block" id="loop-return-q" hidden>
+      <p><strong>One more thing is missing: the path itself.</strong> The sensor has measured the output. Where must that measurement be carried back to?</p>
+      <div class="single-select" id="ss-return" data-correct="compare">
+        <button data-value="compare" type="button">To a comparison with the setpoint, before the controller</button>
+        <button data-value="actuator" type="button">To the actuator, so it can adjust its own movement</button>
+        <button data-value="output" type="button">Back to the output block</button>
+      </div>
+      <div class="feedback" id="ss-return-feedback" hidden></div>
+    </div>
+    <div class="commit-explain" id="ss-return-explain" hidden>The measurement has to reach a point where it is <strong>compared with the setpoint</strong>, because that comparison is what produces the error. A line that returns to the actuator, or loops back into the output, carries a measurement that is never subtracted from anything — so no error exists, and nothing about the system is closed loop. <em>This is the single most common mistake in a hand-drawn closed loop diagram.</em> Check yours for it.</div>
+
+    <div class="field-block">
+      <label for="q3a">There is exactly <strong>one</strong> structural difference between the open loop diagram and the closed loop one. Name it.</label>
+      <textarea id="q3a" data-store="q3a" rows="2"></textarea>
+      <button class="reveal-btn" data-reveal="q3a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q3a-model" hidden>The closed loop diagram has a <strong>feedback path</strong> — a sensor measuring the output, and a return path carrying that measurement to be compared against the setpoint. That single path is the difference.</div>
+    </div>
+
+    <div class="field-block">
+      <p data-summary-skip>Write each definition <strong>in your own words</strong>. Don't copy the text above.</p>
+      <table class="fill-table">
+        <tr><td><label for="q2-open">Open loop control</label></td><td><input type="text" id="q2-open" data-store="q2-open"></td></tr>
+        <tr><td><label for="q2-closed">Closed loop control</label></td><td><input type="text" id="q2-closed" data-store="q2-closed"></td></tr>
+        <tr><td><label for="q2-setpoint">Setpoint</label></td><td><input type="text" id="q2-setpoint" data-store="q2-setpoint"></td></tr>
+        <tr><td><label for="q2-error">Error</label></td><td><input type="text" id="q2-error" data-store="q2-error"></td></tr>
+      </table>
+      <button class="reveal-btn" data-reveal="q2-model" type="button">Check against model definitions</button>
+      <div class="model-answer" id="q2-model" hidden><strong>Open loop control</strong> — the control action does not depend on the output; the system acts on its instruction and never measures whether the intended result was achieved. <strong>Closed loop control</strong> — a sensor measures the actual output, that measurement is fed back and compared with the setpoint, and the control action depends on the difference. <strong>Setpoint</strong> — the desired state of the system; the value the algorithm is trying to reach or hold. <strong>Error</strong> — the difference between the measured state and the setpoint.<br><br><em>Watch out for "closed loop means it has feedback"</em> with no statement of what is fed back or what is done with it. It isn't wrong, but it's the answer that lets you keep the misconception. Your definition should say <em>measures the output</em> and <em>the action depends on the difference</em>.</div>
+    </div>
+
+    <p class="note-small" data-summary-skip>Drawing both diagrams yourself in draw.io is on the worksheet, not here — it's the one task in this lesson where you produce the diagram rather than read one, so it's worth doing properly.</p>
+
+    <div class="takeaway"><h3>In one sentence</h3>Open loop acts on its instruction and never checks the result; closed loop measures the output, compares it with the setpoint, and acts on the difference — that returning feedback path is the only structural difference between the two diagrams.</div>
+
+    <button class="next-btn" data-next="sec-3" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 3 -->
+  <section class="site-section" id="sec-3" data-title="The two-question test">
+    <div class="eyebrow">Part 2 · The test</div>
+    <h2>Two questions, in this order</h2>
+    <p>From here on, you never classify a system by how it feels. You run a procedure.</p>
+
+    <div class="cards-3">
+      <div class="mini-card green"><h3>1 · What is the controlled variable?</h3>Name the <strong>one thing</strong> the system is trying to hold at, or bring to, a value. Temperature. Speed. Position. Water level.<br><br>On the two diagrams you just saw, this is what the <em>OUTPUT</em> box stands for — and in a closed loop system it is the thing the sensor is pointed at.<br><br>If you can't name it, you can't classify the system — you're guessing.</div>
+      <div class="mini-card amber"><h3>2 · Does the system measure <em>that</em> variable, and change its own action because of the measurement?</h3>Both halves are required.<br><br><strong>Yes to both → closed loop.</strong><br><strong>No to either → open loop.</strong></div>
+    </div>
+
+    <div class="eyebrow">Watch the test being run</div>
+    <h2>Two worked examples</h2>
+    <p>Here is the test run all the way through on the two machines from the last section, one step at a time. Read both before you try it yourself.</p>
+
+    <div class="cards-3">
+      <div class="mini-card red"><h3>Worked example 1 — the toaster</h3>
+        <strong>Step 1 · What is the controlled variable?</strong><br>
+        How toasted the bread is.<br>
+        <span class="note-small">Careful: it is not "the timer". The timer is <em>how</em> the machine tries to get the result — the controlled variable is the result you actually want.</span><br><br>
+        <strong>Step 2 · Does it measure that, and change its action because of the measurement?</strong><br>
+        No. It measures nothing at all. It runs the element for the time you set, and stops.<br><br>
+        <strong>No to step 2 → open loop.</strong>
+      </div>
+      <div class="mini-card green"><h3>Worked example 2 — the oven</h3>
+        <strong>Step 1 · What is the controlled variable?</strong><br>
+        The air temperature inside the oven.<br>
+        <span class="note-small">You set 180 °C, so 180 °C is the setpoint and temperature is the thing being controlled.</span><br><br>
+        <strong>Step 2 · Does it measure that, and change its action because of the measurement?</strong><br>
+        Yes. The thermostat measures the actual air temperature, and switches the element on or off depending on how far off 180 °C it is.<br><br>
+        <strong>Yes to both → closed loop.</strong>
+      </div>
+    </div>
+
+    <blockquote class="def-quote">Two things to notice about how those ran. The variable was named <strong>before</strong> anything else was asked — that is the whole reason for the order. And step 2 is about the <em>machine's own behaviour changing</em>, not about whether a measurement is taken somewhere in the building.</blockquote>
+
+    <blockquote class="def-quote">Notice what the test does <em>not</em> ask: whether the system is electronic, whether it's automatic, whether it's clever, or whether it has sensors on it somewhere.</blockquote>
+
+    <div class="cards-3">
+      <div class="mini-card"><h3>A 200-year-old steam governor</h3>Two heavy metal balls spin on hinged arms above the engine. The faster the engine runs, the further out they swing, and the arms pull a collar that squeezes the steam valve shut — so the engine slows down. Slow it too far and the balls drop, the valve opens, and it speeds back up. No electronics, no code, nothing you would call a computer. Speed is measured and the action changes because of it, so it is <strong>closed loop</strong>.</div>
+      <div class="mini-card red"><h3>A brand-new microcontroller running a timed sequence</h3>Modern, programmable, digital. It runs its stored sequence and never measures anything — <strong>open loop</strong>.</div>
+    </div>
+
+    <div class="video-wrap">
+      <a class="video-thumb-link" href="https://www.youtube.com/watch?v=HS_YGZXP2xY" target="_blank" rel="noopener noreferrer" aria-label="Watch &quot;How a Flyball or Centrifugal Governor Works&quot; on YouTube (opens in a new tab)">
+        <img src="https://img.youtube.com/vi/HS_YGZXP2xY/hqdefault.jpg" alt="Video thumbnail: an animation of a flyball centrifugal governor controlling an engine">
+        <span class="video-play-badge" aria-hidden="true">▶</span>
+      </a>
+      <p class="video-link-caption" data-summary-skip>Optional — an animation of the governor above, 3:09. Opens on YouTube in a new tab.</p>
+      <details class="video-fallback">
+        <summary>Can't watch the video? Here is what it shows.</summary>
+        <p>An animated governor spins alongside the engine it controls. When the load on the engine suddenly increases, the engine slows, the spinning balls drop inward, and the linkage opens the steam valve further until the speed comes back up. When the load drops away the opposite happens. Watch for two things: the machine is <strong>correcting for a change nobody told it about</strong>, and it does not snap straight to the right speed — it overshoots and swings above and below the target a few times before settling. That settling behaviour comes back in this lesson's extension section.</p>
+      </details>
+    </div>
+
+    <div class="quiz-block">
+      <p><strong>Quick check:</strong> which of these does the two-question test <em>not</em> ask about?</p>
+      <div class="single-select" id="ss-test-asks" data-correct="modern" data-explain="Sophistication is not feedback. The steam governor and the microcontroller above are the two examples worth remembering for this.">
+        <button data-value="modern" type="button">Whether the system is modern, electronic or automatic</button>
+        <button data-value="variable" type="button">What the controlled variable is</button>
+        <button data-value="action" type="button">Whether the measurement changes the system's action</button>
+      </div>
+      <div class="feedback" id="ss-test-asks-feedback" hidden></div>
+    </div>
+
+    <div class="field-block">
+      <label for="q1a">Explain why question 1 has to be answered <strong>first</strong>. What goes wrong if you skip it?</label>
+      <textarea id="q1a" data-store="q1a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q1a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q1a-model" hidden>Until you have named the controlled variable, "does it measure it?" has no meaning — there is no "it" yet. Skipping straight to "does it have a sensor?" is what produces the wrong answer, because a system can have sensors measuring something other than the variable you were asked about.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q1b">The test deliberately does not ask whether a system is electronic, automatic or modern. Explain why none of those tell you anything about whether a loop is closed.</label>
+      <textarea id="q1b" data-store="q1b" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q1b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q1b-model" hidden>Being electronic, automatic or modern describes <em>how</em> the control action is produced, not whether the result is measured and fed back. A 200-year-old mechanical governor on a steam engine is closed loop; a brand-new microcontroller running a fixed timed sequence is open loop. Any answer that separates <strong>sophistication</strong> from <strong>feedback</strong> is on the right track — that separation is the whole lesson.</div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>Never classify a system by how it feels: name the controlled variable first, then ask whether the system measures <em>that</em> variable and changes its own action because of the measurement.</div>
+
+    <button class="next-btn" data-next="sec-4" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 4 -->
+  <section class="site-section" id="sec-4" data-title="Sensors aren't proof">
+    <div class="eyebrow">Part 2 · Misconception 1</div>
+    <h2>A sensor does not make it closed loop</h2>
+
+    <div class="commit-block" id="commit-washing">
+      <p><strong>Before you read on.</strong> A washing machine has a water-level sensor that stops it filling when the drum reaches the right level. It also runs its wash cycle for a fixed number of minutes. <strong>Is the washing machine closed loop?</strong></p>
+      <div class="single-select" data-correct="illformed" id="ss-washing">
+        <button data-value="yes" type="button">Yes — it has a sensor</button>
+        <button data-value="no" type="button">No — the cycle is just a timer</button>
+        <button data-value="illformed" type="button">The question can't be answered as asked</button>
+      </div>
+      <p class="commit-warn" data-summary-skip>Choose one — the explanation only appears after you commit.</p>
+      <div class="feedback" id="ss-washing-feedback" hidden></div>
+    </div>
+    <div class="commit-explain" id="ss-washing-explain" hidden>The machine is <strong>closed loop on water level</strong> and <strong>open loop on cycle timing</strong>, at the same time, in the same machine. Both are true, so neither "yes" nor "no" is a complete answer. Read on and you'll see exactly why — and why <em>"closed loop on what?"</em> is the only version of this question that has an answer.</div>
+
+    <blockquote class="def-quote red">"It has a sensor, so it's closed loop" is the single most common wrong answer in this topic.</blockquote>
+
+    <div class="cards-3">
+      <div class="mini-card"><h3>The sensor must measure the <em>controlled variable</em></h3>The washing machine's water-level sensor closes the loop on <strong>water level</strong> — it does nothing at all for how long the wash cycle runs, which is still just a timer.</div>
+      <div class="mini-card amber"><h3>So run the test separately, per variable</h3>"Washing machine" is not a controlled variable. "Water level" is. "Cycle timing" is. You get a different answer for each, and both answers are correct.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q7a">Is the machine closed loop on <strong>water level</strong>? Justify it using the two-question test.</label>
+      <textarea id="q7a" data-store="q7a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q7a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q7a-model" hidden>Yes. Controlled variable: water level. The machine measures water level with the sensor, and stops filling because of that measurement. Both halves of the test pass.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q7b">Is the machine closed loop on <strong>cycle timing</strong>? Justify it using the two-question test.</label>
+      <textarea id="q7b" data-store="q7b" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q7b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q7b-model" hidden>No. Controlled variable: cycle timing, or how clean the clothes are. The machine runs the wash for a fixed number of minutes and never measures how clean the clothes are, so nothing about the timing depends on a measurement. The water-level sensor is irrelevant here — it measures a different variable.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q7c">So what does all of this tell you about the question <em>"is a washing machine closed loop?"</em></label>
+      <textarea id="q7c" data-store="q7c" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q7c-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q7c-model" hidden>The question is badly formed. A single machine can be closed loop on one variable and open loop on another at the same time, so <em>"is a washing machine closed loop?"</em> has no answer until you say <strong>closed loop on what</strong>.<br><br>If you take one sentence away from this lesson, take that one.</div>
+    </div>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Part 2 · Misconception 1, the other half</div>
+    <h2>Measurement without consequence is not feedback</h2>
+
+    <div class="commit-block" id="commit-led">
+      <p><strong>Commit before reading on.</strong> A machine has a temperature sensor. When the temperature goes above 60 °C, a red warning LED turns on. Nothing else in the machine changes. <strong>Is this closed loop control of temperature?</strong></p>
+      <div class="single-select" data-correct="no" id="ss-led">
+        <button data-value="yes" type="button">Yes — the temperature is measured and the machine responds</button>
+        <button data-value="no" type="button">No</button>
+        <button data-value="sensor" type="button">Only if a second sensor is added</button>
+      </div>
+      <p class="commit-warn" data-summary-skip>Choose one — the explanation only appears after you commit.</p>
+      <div class="feedback" id="ss-led-feedback" hidden></div>
+    </div>
+    <div class="commit-explain" id="ss-led-explain" hidden>No. This one is the mirror image of the washing machine: here the sensor measures <strong>exactly the right variable</strong>, and it still isn't closed loop — because nothing the machine <em>does</em> changes. The light changed. The control action didn't. <br><br>If you picked "only if a second sensor is added", that is the misconception in its purest form and worth sitting with: the system does not need more measuring. It needs the measurement it already has to <em>do</em> something.</div>
+
+    <div class="cards-3">
+      <div class="mini-card red"><h3>An indicator</h3>Tells a human something. The machine's own behaviour is unchanged, so the second half of the test fails.</div>
+      <div class="mini-card green"><h3>Feedback</h3>Changes what the machine does next. The measurement has to reach the control action, not just a light.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q8b">What <strong>single change</strong> would make this machine closed loop on temperature?</label>
+      <textarea id="q8b" data-store="q8b" rows="2"></textarea>
+      <button class="reveal-btn" data-reveal="q8b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q8b-model" hidden>Connect the measurement to the control action — for example, have the machine reduce power or switch the heater off when it goes above 60 °C, instead of only lighting the LED. Once the reading changes the action, the loop is closed. <em>Adding another sensor changes nothing</em>: the system doesn't need more measuring, it needs the measurement to do something.</div>
+    </div>
+
+    <blockquote class="def-quote">So one machine can be <strong>closed loop for one variable and open loop for another</strong>, at the same time — and a machine can measure exactly the right variable and still be open loop. Say which variable you mean, and check that the reading actually changes the action. Every time.</blockquote>
+
+    <div class="takeaway"><h3>In one sentence</h3>A sensor proves nothing on its own — it has to measure the variable you were asked about, <em>and</em> the measurement has to change what the machine does. A light that only tells a human is an indicator, not feedback.</div>
+
+    <button class="next-btn" data-next="sec-5" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 5 -->
+  <section class="site-section" id="sec-5" data-title="Where's the boundary?">
+    <div class="eyebrow">Part 2 · Misconception 2</div>
+    <h2>Where you draw the boundary changes the answer</h2>
+
+    <blockquote class="def-quote amber"><strong>Vehicle steering.</strong> You turn the wheel 30°, the steering mechanism turns the road wheels by a proportional amount, and that is the end of it. The car never measures whether it ended up where you wanted.</blockquote>
+
+    <div class="cards-3">
+      <div class="mini-card"><h3>The machine alone</h3><strong>Open loop.</strong> No sensor measures the car's position on the road, and no measurement changes the steering action.</div>
+      <div class="mini-card green"><h3>Machine + driver</h3><strong>Closed loop</strong> — but the loop is closed by the <em>human</em>. You look at the road, see the error, and correct it. The feedback path runs through a person rather than through a sensor and a circuit.</div>
+    </div>
+
+    <blockquote class="def-quote">Both answers are right. What's wrong is not saying which system you mean. <strong>In this course, when a question asks about a system, classify the machine — unless the question puts a person in it.</strong></blockquote>
+
+    <div class="quiz-block">
+      <p><strong>Quick check:</strong> an exam question asks you to classify "a vehicle's steering system". Which system do you classify?</p>
+      <div class="single-select" id="ss-boundary" data-correct="machine" data-explain="Classify the machine unless the question puts a person in it — and if you do argue the driver-in-the-loop version, say so explicitly, because that is what makes it right rather than lucky.">
+        <button data-value="machine" type="button">The machine on its own</button>
+        <button data-value="driver" type="button">The machine plus the driver</button>
+        <button data-value="whichever" type="button">Whichever one gives the closed loop answer</button>
+      </div>
+      <div class="feedback" id="ss-boundary-feedback" hidden></div>
+    </div>
+
+    <div class="field-block">
+      <label for="q6b">Explain how the classification of vehicle steering changes when the <strong>driver</strong> is counted as part of the system, and state which of the two a question in this course means unless it says otherwise.</label>
+      <textarea id="q6b" data-store="q6b" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q6b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q6b-model" hidden>With the driver counted in, the system is closed loop — the driver sees the car drifting, that's the error, and they correct the steering. The feedback path runs through a person rather than through a sensor and a circuit. Unless a question puts a person inside the system, classify the <strong>machine</strong>; in this course that is the default.</div>
+    </div>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Part 2 · The other one that depends</div>
+    <h2>Traffic lights: it depends on the intersection</h2>
+    <p>This is the case students argue about most, and the argument is worth having, because <em>both sides are describing real intersections</em>.</p>
+
+    <div class="cards-3">
+      <div class="mini-card"><h3>Fixed-timing</h3>Each phase runs for a set number of seconds regardless of traffic. Nothing measures the queue. <strong>Open loop.</strong></div>
+      <div class="mini-card green"><h3>Actuated</h3><strong>Inductive detector loops</strong> — coils of wire set into the road just behind the stop line — or pedestrian buttons detect who is waiting, and the controller extends or shortens the phases in response. The coil works because the metal underside of a car changes its electrical behaviour, which the controller reads as "a vehicle is sitting here". <strong>Closed loop.</strong></div>
+      <div class="mini-card amber"><h3>The physical difference</h3>A detector in the road surface at the stop line, plus control logic that actually uses it. Everything else about the two intersections can look identical from the footpath.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q6a">Describe one traffic light design that is <strong>open loop</strong> and one that is <strong>closed loop</strong>, and say what the difference physically is.</label>
+      <textarea id="q6a" data-store="q6a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q6a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q6a-model" hidden>A fixed-timing intersection runs each phase for a set number of seconds regardless of traffic — open loop, because nothing measures the queue. An actuated intersection has inductive loops buried in the road (or pedestrian buttons) that detect waiting vehicles and extend or shorten phases in response — closed loop, because the thing being controlled (traffic flow) is measured and changes the action. Physically, the difference is the detector: a sensor in the road surface at the stop line, and the control logic that uses it.</div>
+    </div>
+
+    <blockquote class="def-quote">Two of the systems in the table coming up have <strong>no single right answer</strong>. That is deliberate. State the design you assumed, and your answer is right either way — what would be wrong is not saying.</blockquote>
+
+    <div class="takeaway"><h3>In one sentence</h3>Some systems genuinely have two right answers, depending on the design or on where you draw the system boundary — so say which one you assumed. In this course, classify the machine unless the question puts a person in it.</div>
+
+    <button class="next-btn" data-next="sec-6" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 6 -->
+  <section class="site-section" id="sec-6" data-title="The error">
+    <div class="eyebrow">Part 3 · Error</div>
+    <h2>How the error is determined</h2>
+
+    <blockquote class="def-quote">Sensors measure the state of the system after the control output. Those values are used to find how far the system is from the desired setpoint. <strong>The difference between the measured state and the setpoint is the error.</strong></blockquote>
+
+    <div class="cards-3">
+      <div class="mini-card green"><h3>Worked: cruise control</h3>Setpoint <em>100 km/h</em>. The sensor measures <em>94 km/h</em>.<br><br>error = setpoint − measured = <strong>+6 km/h</strong><br>The car is 6 below where it should be → <strong>apply more throttle</strong>.</div>
+      <div class="mini-card"><h3>The rule</h3>Subtract the measurement from the setpoint. Sign conventions differ between industries — "+6" and "6 below setpoint" are both fine. What matters is that a <strong>subtraction happened at all</strong>, and that its result drives the next action.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q4a">In your own words: describe how the error is determined in a closed loop control algorithm.</label>
+      <textarea id="q4a" data-store="q4a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q4a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q4a-model" hidden>Sensors measure the state of the system after the control output. Those values are compared against the desired setpoint, and the difference between the measured state and the setpoint is the error.</div>
+    </div>
+
+    <div class="quiz-block">
+      <p><strong>Your turn.</strong> An oven's setpoint is 180 °C. Its sensor measures 185 °C. What is the error?</p>
+      <div class="single-select" id="ss-oven-error" data-correct="minus5" data-explain="error = setpoint − measured = 180 − 185 = −5 °C. Writing it as “5 °C above setpoint” is equally acceptable — what matters is that a subtraction happened.">
+        <button data-value="minus5" type="button">−5 °C — it is 5 above the setpoint</button>
+        <button data-value="plus5" type="button">+5 °C — it is 5 below the setpoint</button>
+        <button data-value="zero" type="button">0 °C — the oven is switched on, so it is on target</button>
+      </div>
+      <div class="feedback" id="ss-oven-error-feedback" hidden></div>
+    </div>
+
+    <div class="quiz-block">
+      <p>And what should the controller do about it?</p>
+      <div class="single-select" id="ss-oven-action" data-correct="off" data-explain="The oven is above its setpoint, so the correction is to stop adding heat. This is the controller acting on the error rather than on the original instruction.">
+        <button data-value="off" type="button">Switch the heating element off</button>
+        <button data-value="up" type="button">Turn the heating element up</button>
+        <button data-value="nothing" type="button">Nothing — 5 °C is close enough</button>
+      </div>
+      <div class="feedback" id="ss-oven-action-feedback" hidden></div>
+    </div>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Part 3 · The error in an open loop system</div>
+    <h2>What is the error when nothing is measured?</h2>
+
+    <div class="commit-block" id="commit-zero">
+      <p><strong>Commit before reading on.</strong> A student writes: <em>"In an open loop system the error is always zero."</em> Is that right?</p>
+      <div class="single-select" data-correct="noterm" id="ss-zero">
+        <button data-value="yes" type="button">Yes — nothing has gone wrong, so the error is zero</button>
+        <button data-value="noterm" type="button">No — there is no error term at all</button>
+        <button data-value="large" type="button">No — the error is unknown, but it is usually large</button>
+      </div>
+      <p class="commit-warn" data-summary-skip>Choose one — the explanation only appears after you commit.</p>
+      <div class="feedback" id="ss-zero-feedback" hidden></div>
+    </div>
+    <div class="commit-explain" id="ss-zero-explain" hidden>An open loop system has <strong>no error term at all</strong> — not an error of zero. Error is the difference between a measurement and a setpoint, and an open loop system never takes the measurement, so the subtraction is never performed. There is nothing to subtract.<br><br>Saying "the error is zero" implies the system checked and found it was on target, which is exactly what it did <em>not</em> do. If you wrote "the error is zero because it doesn't measure", you have the mechanism right and the conclusion wrong — and that one will follow you into Lesson 11, where the size of the error is the whole point.</div>
+
+    <div class="field-block">
+      <label for="q4c">Now write it yourself: explain why <em>"in an open loop system the error is always zero"</em> is wrong.</label>
+      <textarea id="q4c" data-store="q4c" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q4c-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q4c-model" hidden>An open loop system has no error term at all — not an error of zero. Error is the difference between a measurement and a setpoint, and an open loop system never takes the measurement, so the subtraction is never performed. Saying the error is zero implies the system checked and found it was on target, which is exactly what it did not do.</div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>The error is what you get when you subtract the measurement from the setpoint — and an open loop system has no error term at all, because it never takes the measurement to subtract.</div>
+
+    <button class="next-btn" data-next="sec-7" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 7 -->
+  <section class="site-section" id="sec-7" data-title="Classify nine systems">
+    <div class="eyebrow">Part 4 · Practice — the checkpoint</div>
+    <h2>Run the test on nine systems</h2>
+    <p>This is the part of the lesson that decides whether you've got it. Everything you need has now been taught: the two-question test, the two ways a sensor can fool you, and what to do when the answer depends on where you draw the boundary.</p>
+    <div class="cards-3">
+      <div class="mini-card green"><h3>One more worked example first — an electric kettle</h3>
+        <strong>Step 1 · What is the controlled variable?</strong><br>
+        The temperature of the water.<br><br>
+        <strong>Step 2 · Does it measure that, and change its action because of the measurement?</strong><br>
+        Yes. A sensor in the kettle detects when the water reaches boiling, and the kettle switches its own element off because of that reading.<br><br>
+        <strong>Yes to both → closed loop.</strong> Note that it is closed loop on <em>water temperature</em>. It is not closed loop on how full it is — nothing stops you boiling an almost-empty kettle.
+      </div>
+    </div>
+    <p data-summary-skip>Now do the same nine times. For each system, name the <strong>controlled variable</strong> first. The second question stays locked until you do — that order is the whole point, so the page enforces it rather than just recommending it.</p>
+
+    <div class="sys-grid" id="sys-grid"></div>
+    <div class="score-line" id="sys-score"></div>
+
+    <blockquote class="def-quote amber">Two of those nine — <strong>traffic lights</strong> and <strong>vehicle steering</strong> — accept either answer, because both are genuinely correct depending on the design or the system boundary. Marking one of them right and the other wrong would teach you to guess the expected answer instead of running the test, which is the exact habit this lesson exists to break.</blockquote>
+
+    <div class="field-block">
+      <label for="q5-fan">Write your own one-line justification for the <strong>ceiling fan</strong>. Why is a speed switch not closed loop control of blade speed?</label>
+      <textarea id="q5-fan" data-store="q5-fan" rows="2"></textarea>
+      <button class="reveal-btn" data-reveal="q5-fan-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q5-fan-model" hidden>The switch selects a voltage, and that's all it does. Blade speed itself is never measured, so a fan slowed down by a dusty motor or a stiff bearing simply stays slow — nothing notices, and nothing corrects it.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q5-arm">And for the <strong>robotic arm running predetermined movements</strong> — it is programmable, precise and fully automatic. Why is it still open loop?</label>
+      <textarea id="q5-arm" data-store="q5-arm" rows="2"></textarea>
+      <button class="reveal-btn" data-reveal="q5-arm-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q5-arm-model" hidden>It repeats a stored sequence of positions. Nothing measures whether the gripper actually reached each position, and nothing in the program changes if it didn't. Being programmable, precise and automatic describes how good the sequence is — not whether the result is checked.</div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>Run the two questions in order, every time, and the answer stops being a guess: controlled variable first, then measure-and-act.</div>
+
+    <button class="next-btn" data-next="sec-8" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 8 -->
+  <section class="site-section" id="sec-8" data-title="The trade-off">
+    <div class="eyebrow">Part 5 · The trade-off</div>
+    <h2>Closed loop is not automatically better</h2>
+    <p>Having spent the lesson learning to spot systems that only <em>look</em> closed loop, it would be easy to come away thinking closed loop is the good answer and open loop is the lazy one. It isn't.</p>
+
+    <div class="cards-3">
+      <div class="mini-card green"><h3>Advantage</h3>Because it monitors the result of its own output, a closed loop system can adjust its control values to get closer to the setpoint — including correcting for <strong>disturbances it was never told about</strong>: a hill, a heavier load, a draught.</div>
+      <div class="mini-card red"><h3>Disadvantages</h3>More complex and more expensive: extra sensors, extra code, and <em>calibration</em> — the work of finding out what this particular sensor's readings actually mean in this particular place. And it can be made <strong>unstable</strong>: react too hard to the error and the system shoots past the setpoint, over-corrects the other way, and keeps swinging instead of settling. The extension section at the end shows what that looks like.</div>
+    </div>
+
+    <blockquote class="def-quote">Most real systems are <strong>a mix</strong>. Your washing machine closes the loop on water level and water temperature, and runs the cycle timing open loop. Choosing correctly <em>per variable</em> is the engineering.</blockquote>
+
+    <div class="quiz-block">
+      <p><strong>Quick check:</strong> which of these is a genuine disadvantage of closed loop control?</p>
+      <div class="single-select" id="ss-disadv" data-correct="unstable" data-explain="Correcting for unexpected disturbances is closed loop’s main advantage, not a drawback — and closed loop is not inherently slower. Cost, complexity and instability are the real prices.">
+        <button data-value="unstable" type="button">It can be made unstable, and oscillate around the setpoint</button>
+        <button data-value="disturb" type="button">It cannot correct for unexpected disturbances</button>
+        <button data-value="cheap" type="button">It is always slower than open loop control</button>
+      </div>
+      <div class="feedback" id="ss-disadv-feedback" hidden></div>
+    </div>
+
+    <div class="field-block">
+      <label for="q9a">Explain <strong>one advantage</strong> of closed loop control.</label>
+      <textarea id="q9a" data-store="q9a" rows="2"></textarea>
+      <button class="reveal-btn" data-reveal="q9a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q9a-model" hidden>Because it constantly monitors the result of its own output, a closed loop system can adjust its control values to get the system state closer to the setpoint — including correcting for disturbances it was never told about, such as a hill, a heavier load or a draught.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q9b">Explain <strong>one disadvantage</strong> of closed loop control.</label>
+      <textarea id="q9b" data-store="q9b" rows="2"></textarea>
+      <button class="reveal-btn" data-reveal="q9b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q9b-model" hidden>It is more complex and more expensive to achieve — extra sensors, extra code, calibration — and it can introduce <strong>instability</strong> into the system, oscillating around the setpoint instead of settling on it. Either argument is acceptable; instability is the more interesting one, and it leads straight into Lesson 11.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q10a">Describe a situation where an engineer would <strong>deliberately</strong> choose open loop control, and explain why.</label>
+      <textarea id="q10a" data-store="q10a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q10a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q10a-model" hidden>Any well-reasoned case — a microwave timer, where the relationship between time and result is predictable enough that measuring it wouldn't justify the cost; a traffic light on a quiet road where a fixed cycle is adequate; a stepper-driven machine whose positioning is accurate enough that adding position sensors would only add cost and failure modes.<br><br>The reasoning to aim for: <strong>the relationship between input and output is reliable enough that measurement isn't worth what it costs.</strong></div>
+    </div>
+
+    <div class="field-block">
+      <label for="q10b">Give one example of a <strong>single machine</strong> that runs one variable open loop and another closed loop.</label>
+      <textarea id="q10b" data-store="q10b" rows="2"></textarea>
+      <button class="reveal-btn" data-reveal="q10b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q10b-model" hidden>A washing machine — closed loop on water level and water temperature, open loop on cycle timing. Also fine: a car (closed loop cruise control and engine management, open loop steering and indicators); an oven (closed loop temperature, open loop timer).</div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>Closed loop costs sensors, code, calibration and the risk of instability, so it is not automatically the better choice — most real machines are a mix, chosen one variable at a time.</div>
+
+    <button class="next-btn" data-next="sec-9" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 9 -->
+  <section class="site-section" id="sec-9" data-title="Our own arm">
+    <div class="eyebrow">Part 6 · Our own build</div>
+    <h2>Three different loops, in one machine</h2>
+
+    <div class="commit-block" id="commit-arm">
+      <p><strong>Commit before reading on.</strong> You've built a MeArm. Four servos, an Arduino, and from Lesson 17 an <strong>LDR</strong> — a light dependent resistor, a sensor whose resistance changes with how much light falls on it — sitting under the pickup pad, so the code can tell whether something is covering the pad. <strong>Is our arm a closed loop system?</strong></p>
+      <div class="single-select" data-correct="illformed" id="ss-arm">
+        <button data-value="yes" type="button">Yes</button>
+        <button data-value="no" type="button">No</button>
+        <button data-value="illformed" type="button">The question isn't well formed — you have to say closed loop on <em>what</em></button>
+      </div>
+      <p class="commit-warn" data-summary-skip>Choose one — the explanation only appears after you commit.</p>
+      <div class="feedback" id="ss-arm-feedback" hidden></div>
+    </div>
+    <div class="commit-explain" id="ss-arm-explain" hidden>The arm contains <strong>three different loops on three different variables</strong>, and all three are true at the same time, in the same machine. That is precisely why a single yes/no can't be right — it's the washing machine again, but this time it's yours.</div>
+
+    <div class="cards-3">
+      <div class="mini-card green"><h3>1 · Inside each servo</h3>A hobby servo has a <strong>potentiometer</strong> on its output shaft — a component whose resistance changes as the shaft turns, so the voltage across it is a direct read-out of the angle the shaft is <em>actually</em> at. A small circuit inside the servo compares that against the angle it was commanded to reach, and drives the motor until the two match. <strong>Closed loop</strong> — and it's why a servo holds its position when you push on it, where a plain DC motor would just give way. But the loop is inside the servo: not by you, and not in your code.</div>
+      <div class="mini-card red"><h3>2 · Your Lesson 13–15 code</h3>You write an angle. Nothing measures whether the joint got there, and nothing in your program changes if it didn't. <strong>Open loop at the program level.</strong></div>
+      <div class="mini-card amber"><h3>3 · Lessons 17–18, with the LDR</h3>The code reads the pad, decides whether an object is present, acts, and reads again. <strong>Closed loop on pad occupancy</strong> — the arm's <em>position</em> is still open loop.</div>
+    </div>
+
+    <div class="diagram-wrap diagram-breakout">
+      <img src="diagrams/arm-three-loops.svg" alt="The MeArm analysed as three simultaneous loops: the servo's own internal closed loop, the open loop Lesson 13 to 15 code, and the Lesson 17 to 18 LDR routine closed on pad occupancy." class="loop-diagram">
+    </div>
+
+    <div class="video-wrap">
+      <a class="video-thumb-link" href="https://www.youtube.com/watch?v=g68khnZnJKM" target="_blank" rel="noopener noreferrer" aria-label="Watch &quot;How a DC servo motor works? | detailed 3d Animation&quot; on YouTube (opens in a new tab)">
+        <img src="https://img.youtube.com/vi/g68khnZnJKM/hqdefault.jpg" alt="Video thumbnail: How a DC servo motor works, a detailed 3D animation">
+        <span class="video-play-badge" aria-hidden="true">▶</span>
+      </a>
+      <p class="video-link-caption" data-summary-skip>Optional — a 3D animation of what is actually inside loop 1, 6:44. You may have already seen this one in Lesson 9. Opens on YouTube in a new tab.</p>
+      <details class="video-fallback">
+        <summary>Can't watch the video? Here is what it shows.</summary>
+        <p>The animation cuts a servo open. Inside are a small DC motor, a gearbox that trades the motor's speed for turning force, the output shaft that your arm's plywood link bolts onto, and — the part that matters here — a <strong>potentiometer geared to that output shaft</strong>. As the shaft turns, the potentiometer's resistance changes, so the circuit beside it always has a live reading of the shaft's real angle. That circuit compares the real angle with the angle your <code>servo.write()</code> asked for, and runs the motor in whichever direction closes the gap. That comparison is a genuine closed loop — it is just sealed inside a plastic case, with no wire that could ever carry the reading back out to your Arduino.</p>
+      </details>
+    </div>
+
+    <div class="quiz-block">
+      <p><strong>Quick check:</strong> the servo closes a loop on its own shaft angle. Can your Arduino program read that measurement?</p>
+      <div class="single-select" id="ss-servo-read" data-correct="no">
+        <button data-value="no" type="button">No — the servo never reports its actual angle back to the Arduino</button>
+        <button data-value="yes" type="button">Yes — <code>Servo.read()</code> returns the measured shaft angle</button>
+      </div>
+      <div class="feedback" id="ss-servo-read-feedback" hidden></div>
+    </div>
+    <div class="commit-explain" id="ss-servo-read-explain" hidden>The servo's feedback loop is entirely internal. The three wires going to it are power, ground and signal — there is no return line, and nothing in the servo ever tells the Arduino what angle the shaft is actually at. <code>Servo.read()</code> exists, but it just hands you back the last angle <em>you</em> commanded, which tells you nothing about whether the joint moved. This is exactly why loop 1 being closed does not make loop 2 closed.</div>
+
+    <div class="field-block">
+      <label for="q11a">Explain why <em>"is our arm closed loop?"</em> is not a well-formed question, and write a better version of it.</label>
+      <textarea id="q11a" data-store="q11a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q11a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q11a-model" hidden>The arm contains three different loops on three different variables, so a single yes/no answer can't be right. A better question is "is our arm's <em>joint positioning</em> closed loop?" (no) or "is our pick-and-place routine closed loop on whether an object is present?" (yes).</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q11b">In Lessons 17–18 the code closes a loop on whether the pad is occupied. The arm's <strong>position</strong> is still not measured by your program. Explain what could go wrong because of that, and what you would have to add to fix it.</label>
+      <textarea id="q11b" data-store="q11b" rows="4"></textarea>
+      <button class="reveal-btn" data-reveal="q11b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q11b-model" hidden>If a joint is obstructed, jammed, or reaches its mechanical limit, the program has no way of knowing — it carries on with the sequence as though the move succeeded, so the claw may close on nothing, or the arm may try to place an object it never picked up. Nothing in the code detects the failure.<br><br>To fix it you would need a measurement of actual joint position — an <em>encoder</em> (a sensor on the joint that counts how far it has really turned), or a servo that reports its own position back — and code that compares it against the commanded angle before continuing — plus a decision about what to do when they disagree.<br><br><em>A second, more elegant answer:</em> re-check the LDR after the pick to confirm the pad is now empty, or add a switch at the gripper that detects whether an object is actually held. Both close a loop on the outcome using a sensor you already have or could add cheaply.</div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>Our own arm is closed loop inside each servo, open loop in your Lessons 13–15 code, and closed loop on pad occupancy in Lessons 17–18 — three loops on three variables, all true at once, which is why "is the arm closed loop?" has no single answer.</div>
+
+    <button class="next-btn" data-next="sec-10" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 10 -->
+  <section class="site-section" id="sec-10" data-title="Production line">
+    <div class="eyebrow">Part 7 · The question you'll be asked</div>
+    <h2>A production line arm — which would you choose?</h2>
+
+    <blockquote class="def-quote">A programmable robotic arm moves components from one place to another on a production line. Recommend open <strong>or</strong> closed loop control, and justify it. <em>Both answers can be argued well. The justification is the mark.</em></blockquote>
+
+    <div class="quiz-block">
+      <p><strong>Your recommendation:</strong></p>
+      <div class="choice-select" id="choice-line" data-store="choice-line">
+        <button data-value="open" type="button">Open loop</button>
+        <button data-value="closed" type="button">Closed loop</button>
+      </div>
+      <p class="note-small" data-summary-skip>There is no marked answer here. Your choice is recorded so the follow-up question can be aimed at whichever side you picked.</p>
+    </div>
+
+    <div class="field-block">
+      <label for="q12a">Justify your recommendation.</label>
+      <textarea id="q12a" data-store="q12a" rows="4"></textarea>
+      <button class="reveal-btn" data-reveal="q12a-model" type="button">See how both sides are argued</button>
+      <div class="model-answer" id="q12a-model" hidden><strong>The case for open loop:</strong> with good servo or <em>stepper</em> motors — a stepper turns in fixed, counted steps, so commanding 200 steps reliably gives you 200 steps' worth of rotation — positional accuracy may be sufficient on its own. Components on a production line have entirely predictable weight, so the motors hold accurate positions under load. The source and destination positions don't move relative to the arm, so the same movement can be repeated exactly without measurement.<br><br><strong>The case for closed loop:</strong> a production line needs very high reliability, and the whole line stops if a component is mispositioned. The arm should continually sense the difference between its position and the component's position so it can actuate the gripper at exactly the right point, even if something shifts.<br><br><em>Both verdicts are correct with a sound justification.</em> A verdict supported by "because it's better" is worth nothing on either side.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q12b">Now give the strongest argument <strong>against</strong> the option you chose.</label>
+      <textarea id="q12b" data-store="q12b" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q12b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q12b-model" hidden>
+        <span data-choice-branch="closed"><strong>If you chose closed loop:</strong> the cost and complexity may not be justified when the task is this repeatable, and more sensors mean more things that can fail or need calibrating.<br><br></span>
+        <span data-choice-branch="open"><strong>If you chose open loop:</strong> a single unnoticed positioning error propagates — the arm keeps running a sequence that no longer matches reality, and nothing stops it.</span>
+      </div>
+    </div>
+
+    <blockquote class="def-quote amber">This is <strong>your build</strong>, in Lessons 17–18. You will make this exact decision with a real arm and a real object on a pad — and the answer you have to live with is the one your code does, not the one you wrote down.</blockquote>
+
+    <div class="takeaway"><h3>In one sentence</h3>Both verdicts can be argued for a production line arm — the justification is what earns the mark, not the verdict.</div>
+
+    <button class="next-btn" data-next="sec-ext" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ ext -->
+  <section class="site-section" id="sec-ext" data-title="Extension">
+    <div class="eyebrow">▲ Extension — beyond the required content</div>
+    <h2>When a closed loop goes unstable</h2>
+
+    <p>A closed loop system can be made <strong>unstable</strong>. If the controller reacts too strongly to the error, it overshoots the setpoint, then over-corrects the other way, and oscillates instead of settling — a behaviour called <em>hunting</em>.</p>
+
+    <div class="diagram-wrap diagram-breakout">
+      <img src="diagrams/stability-hunting.svg" alt="Temperature against time for two closed loop systems: a well tuned one rises, overshoots slightly and settles on the setpoint, while a badly tuned one overshoots far past it and keeps oscillating." class="loop-diagram">
+    </div>
+
+    <div class="field-block">
+      <label for="ext-a">Describe what a graph of temperature against time looks like for an <strong>unstable</strong> thermostat, compared with a well-tuned one.</label>
+      <textarea id="ext-a" data-store="ext-a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="ext-a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="ext-a-model" hidden>A well-tuned system rises to the setpoint and settles on it, with at most a small overshoot. An unstable one overshoots well past the setpoint, swings back below it, overshoots again, and keeps oscillating — a wave that doesn't shrink, or shrinks very slowly, instead of a curve that flattens out.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="ext-b">Explain how this makes a badly tuned closed loop system <strong>worse</strong> than a simple open loop one for the same job.</label>
+      <textarea id="ext-b" data-store="ext-b" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="ext-b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="ext-b-model" hidden>An open loop system at least applies a steady, predictable output. A badly tuned closed loop system can spend all its time over-correcting — hotter and colder than the target in turn, never settling — so the actual result is further from the setpoint on average, the actuators wear out faster, and the behaviour is harder to predict. <strong>Feedback only helps if what you do with the error is sensible.</strong></div>
+    </div>
+
+    <div class="field-block">
+      <label for="ext-c">In Lesson 11 you meet three ways of deciding how strongly to react to the error. Predict what information a controller would need in order to react <em>proportionally</em> rather than all-or-nothing.</label>
+      <textarea id="ext-c" data-store="ext-c" rows="3"></textarea>
+      <p class="note-small">There is no model answer for this one, on purpose. It is the opening question of Lesson 11, and the class compares predictions before anyone is told the answer — so your prediction is worth keeping exactly as you first wrote it.</p>
+      <p class="note-small" data-summary-skip>Your answer is saved into the work summary at the end of this page. Print it and bring it to Lesson 11.</p>
+    </div>
+
+    <button class="next-btn" data-next="sec-wrap" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ wrap -->
+  <section class="site-section" id="sec-wrap" data-title="Wrap-up">
+    <div class="eyebrow">Wrap-up</div>
+    <h2>Today's key ideas</h2>
+    <div class="cards-3">
+      <div class="mini-card green"><h3>1 · Two questions</h3>What is the controlled variable? Does the system measure <em>it</em> and change its action because of the measurement? Yes to both, or it's open loop.</div>
+      <div class="mini-card"><h3>2 · Sensors and automation prove nothing</h3>A system can be full of sensors and still be open loop on the variable you were asked about — and a measurement that only lights a lamp is an indicator, not feedback.</div>
+      <div class="mini-card amber"><h3>3 · Closed loop is a trade-off</h3>Better correction, at the cost of complexity, expense, and the possibility of instability. Most real machines are a mix, chosen per variable.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q-hook-back">Go back to Section 1 and re-read the two machines you named at the start. Now classify each one properly: name its <strong>controlled variable</strong>, run the two-question test on it, and say whether your first instinct turned out to be right.</label>
+      <textarea id="q-hook-back" data-store="hook-back" rows="3"></textarea>
+    </div>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Every word this lesson used</div>
+    <h2>Vocabulary check</h2>
+    <p data-summary-skip>If any of these is still fuzzy, the section named beside it is where it is explained.</p>
+
+    <table class="glossary">
+      <tr><td><strong>Sensor</strong></td><td>A part that measures something physical and turns it into a number. It only reports; it never moves anything. <span class="where">§2</span></td></tr>
+      <tr><td><strong>Actuator</strong></td><td>A part that does something physical — a motor, a servo, a heating element. <span class="where">§2</span></td></tr>
+      <tr><td><strong>Controller</strong></td><td>The part that decides — on our arm, the Arduino running your code. <span class="where">§2</span></td></tr>
+      <tr><td><strong>Open loop control</strong></td><td>The control action does not depend on the output. The system acts on its instruction and never measures the result. <span class="where">§2</span></td></tr>
+      <tr><td><strong>Closed loop control</strong></td><td>A sensor measures the output, that measurement is compared with the setpoint, and the action depends on the difference. <span class="where">§2</span></td></tr>
+      <tr><td><strong>Feedback path</strong></td><td>The return line carrying the measurement back to be compared with the setpoint — literally what "closed" refers to. <span class="where">§2</span></td></tr>
+      <tr><td><strong>Setpoint</strong></td><td>The desired state of the system — what you asked for. <span class="where">§2, §6</span></td></tr>
+      <tr><td><strong>Controlled variable</strong></td><td>The one thing the system is trying to hold at, or bring to, a value. Always name it before classifying anything. <span class="where">§3</span></td></tr>
+      <tr><td><strong>Error</strong></td><td>The difference between the measured state and the setpoint. An open loop system has no error term at all. <span class="where">§6</span></td></tr>
+      <tr><td><strong>Indicator</strong></td><td>A measurement that only tells a human something. It does not change the machine's action, so it is not feedback. <span class="where">§4</span></td></tr>
+      <tr><td><strong>System boundary</strong></td><td>What you decide counts as "the system" — machine alone, or machine plus the person operating it. It can change the answer. <span class="where">§5</span></td></tr>
+      <tr><td><strong>Calibration</strong></td><td>Finding out what this particular sensor's readings mean in this particular place. <span class="where">§8</span></td></tr>
+      <tr><td><strong>Instability / hunting</strong></td><td>Reacting so hard to the error that the system overshoots, over-corrects the other way, and keeps swinging instead of settling. <span class="where">§8, §11</span></td></tr>
+      <tr><td><strong>Potentiometer</strong></td><td>A component whose resistance changes as a shaft turns, so the voltage across it reads out the angle. It is what closes the loop inside a servo. <span class="where">§9</span></td></tr>
+      <tr><td><strong>LDR</strong></td><td>Light dependent resistor — a sensor whose resistance changes with the light falling on it. Ours sits under the pickup pad. <span class="where">§9</span></td></tr>
+    </table>
+
+    <div class="next-lesson-note"><strong>Next lesson:</strong> once you've decided to close the loop, what do you actually <em>do</em> with the error? On/off, proportional, and PID — Lesson 11.</div>
+    <div class="exit-ticket-note">
+      <strong>Before you go:</strong> complete your exit ticket in Canvas — closed book, no notes. (The exit ticket questions are not repeated here.)
+    </div>
+    <div class="done-banner" id="done-banner">🎉 You've reached the end of Lesson 10.</div>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Your work</div>
+    <h2>Download a summary of your answers</h2>
+    <p data-summary-skip>This page saves your progress in this browser only — nothing is sent anywhere automatically. Add your name below to download or print your notes and answers, for revision or to hand in.</p>
+
+    <div class="summary-fields">
+      <label for="summary-name">Your name</label>
+      <input type="text" id="summary-name" placeholder="Type your name" autocomplete="off">
+      <p class="summary-hint" id="summary-name-hint">Enter your name to enable the download.</p>
+    </div>
+    <button class="check-btn" id="summary-btn" type="button" disabled>⬇ Download / print my work summary</button>
+
+    <div id="work-summary" class="print-summary" hidden></div>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 11 — Autonomous Control Features</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+
+<header class="site-header">
+  <div class="eyebrow">Programming Mechatronics · Lesson 11 · Self-paced</div>
+  <h1>Autonomous Control Features</h1>
+  <p class="sub">What does a controller actually <em>do</em> with the error?</p>
+  <button id="reset-btn" class="reset-btn" type="button">Reset my progress</button>
+</header>
+
+<nav class="section-nav" aria-label="Section navigation">
+  <ol id="nav-list"></ol>
+</nav>
+
+<main id="app">
+
+  <!-- ============================================================ 1 -->
+  <section class="site-section" id="sec-1" data-title="Start here">
+    <div class="eyebrow">Before we start</div>
+    <h2>Lesson 10 left you with a question</h2>
+
+    <blockquote class="def-quote">Lesson 10 ended by asking you to predict something: <em>what information would a controller need in order to react <strong>proportionally</strong> to an error, rather than all-or-nothing?</em> Nobody told you the answer. This lesson is the answer — and two more options beyond it.</blockquote>
+
+    <div class="field-block">
+      <label for="q-hook">Before you read on: a machine is trying to hold something at a target value, and right now it is <strong>a long way off</strong>. Then it gets <strong>very close</strong>. Should it do the same thing in both cases? Say what you think it should do differently, and why.</label>
+      <textarea id="q-hook" data-store="hook" rows="3" placeholder="Type a quick answer..."></textarea>
+      <p class="note-small" data-summary-skip>No marking, and you don't need any of this lesson's vocabulary to answer it. You come back to this at the end.</p>
+    </div>
+
+    <div class="eyebrow">The three parts every system on this page is built from</div>
+    <div class="cards-3">
+      <div class="mini-card"><h3>Sensor</h3>A part that <strong>measures</strong> something physical and turns it into a number — a temperature, an angle, how much light is falling on it. It only ever reports; it never moves anything.</div>
+      <div class="mini-card green"><h3>Actuator</h3>A part that <strong>does</strong> something physical — a motor, a servo, a heating element, a valve. It only ever acts; it never measures anything.</div>
+      <div class="mini-card amber"><h3>Controller</h3>The part that <strong>decides</strong>. On our arm this is the Arduino running your code. It takes the sensor's number and works out what to tell the actuator to do.</div>
+    </div>
+    <p class="note-small">This whole lesson is about one step in the middle: <em>how the controller turns the sensor's number into an instruction for the actuator.</em></p>
+
+    <div class="eyebrow">Two words from Lessons 9 and 10 that this whole lesson rests on</div>
+    <div class="cards-3">
+      <div class="mini-card"><h3>Setpoint</h3>The value the system is trying to reach or hold. 180 °C in an oven. 100 km/h in a car. 90° for a servo joint.</div>
+      <div class="mini-card amber"><h3>Error</h3>The difference between the setpoint and what the system has actually measured. <code>error = setpoint − measured</code>. If the oven is at 150 °C and you asked for 180 °C, the error is 30 °C.</div>
+      <div class="mini-card green"><h3>And the new one: control signal</h3>The number the controller sends out to the actuator — how hard to push, how far to turn, or simply on/off. <strong>This lesson is entirely about how that number is worked out from the error.</strong></div>
+    </div>
+    <p class="note-small">One more word you will meet on almost every page here: the <strong>controlled variable</strong> is the one thing the system is trying to hold at the setpoint — the oven's temperature, the car's speed, the joint's angle. Lesson 10 called it the first question you ask about any system.</p>
+
+    <div class="takeaway"><h3>In one sentence</h3>A controller measures something, works out the error, and turns that error into a control signal for an actuator — and this lesson is about the three different ways of doing that last step.</div>
+
+    <div class="li-sc-grid">
+      <div class="li-box">
+        <h3>Learning intentions</h3>
+        <ul>
+          <li><strong>Describe</strong> on/off (bang-bang), proportional and PID control</li>
+          <li><strong>Explain</strong> why all three can be closed loop</li>
+          <li><strong>Explain</strong> hysteresis, and proportional control's weakness</li>
+          <li><strong>Connect</strong> all of it to our own arm build</li>
+        </ul>
+      </div>
+      <div class="sc-box">
+        <h3>Success criteria</h3>
+        <ul>
+          <li>Name the three algorithm types, in order of increasing sophistication</li>
+          <li>Say what hysteresis stops from happening</li>
+          <li>Explain why a <em>small</em> error trips up proportional control</li>
+          <li>Say which of the three our own build actually uses — and which it doesn't</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="cards-3">
+      <div class="mini-card"><h3>Lesson 9 — done</h3>A control algorithm reads sensors, computes, and outputs to actuators, over and over. You met <strong>setpoint</strong> and <strong>error</strong>.</div>
+      <div class="mini-card"><h3>Lesson 10 — done</h3><strong>Closed loop</strong> means the system measures the thing it is controlling and changes its action because of that measurement. Open loop doesn't.</div>
+      <div class="mini-card green"><h3>Lesson 11 — today</h3>The loop is closed and an error exists. <em>Now what?</em> Three different answers, each better than the last, and each with a cost.</div>
+    </div>
+
+    <button class="next-btn" data-next="sec-2" type="button">Start →</button>
+  </section>
+
+  <!-- ============================================================ 2 -->
+  <section class="site-section" id="sec-2" data-title="Three algorithms">
+    <div class="eyebrow">Part 1 · The three types</div>
+    <h2>Three ways to react to an error</h2>
+
+    <blockquote class="def-quote">There are <strong>three common types of algorithm</strong> used for autonomous control of mechatronic systems. All three sense the system state and use feedback to calculate the error from a setpoint, then use that error to compute the control values sent to the actuators, before the main control loop restarts.</blockquote>
+
+    <p>That is the syllabus wording, and it is worth unpacking slowly. It describes <strong>four steps that repeat forever</strong>, and every one of the three algorithms does all four:</p>
+
+    <ol class="steps">
+      <li><strong>Measure.</strong> A sensor reads the thing being controlled — the temperature, the angle, the speed.</li>
+      <li><strong>Find the error.</strong> Subtract that reading from the setpoint. <code>error = setpoint − measured</code>.</li>
+      <li><strong>Decide.</strong> Turn the error into a control signal. <em>This is the only step where the three algorithms differ.</em></li>
+      <li><strong>Act.</strong> Send that signal to the actuator — then go straight back to step 1.</li>
+    </ol>
+
+    <p>So the shape of the loop is identical in all three. What differs is step 3: <strong>how the error becomes a control signal</strong>.</p>
+
+    <div class="cards-3">
+      <div class="mini-card red"><h3>1 · On/off (bang-bang)</h3>Two states, and nothing in between. Full on, or full off. The size of the error changes <em>when</em> it switches, never <em>how hard</em> it pushes.</div>
+      <div class="mini-card amber"><h3>2 · Proportional</h3>The response scales with the size of the error. Big error, big push. Small error, small push.</div>
+      <div class="mini-card green"><h3>3 · PID</h3>Proportional, <strong>plus</strong> an <em>integral</em> term (the error added up over time) and a <em>derivative</em> term (how fast the error is changing).</div>
+    </div>
+
+    <p class="note-small">Those are in order of increasing sophistication, and that is also the order of increasing effort to build and tune. More sophisticated is not automatically better — the last section of this page is about a system that deliberately uses the simplest one.</p>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Part 1 · What each one looks like</div>
+    <h2>Match each response to its algorithm</h2>
+
+    <p>Each panel below is the same system, with the same setpoint, controlled three different ways.</p>
+
+    <blockquote class="def-quote amber"><strong>How to read these graphs.</strong> Time runs left to right. The height of the solid line is the <strong>measured value</strong> — the actual temperature, angle or speed at that moment. The dashed line across the middle is the <strong>setpoint</strong>: where we asked it to be. So the gap between the two lines, at any point, <em>is the error</em>. A system doing its job well ends up with its solid line sitting on the dashed one.</blockquote>
+
+    <div class="cards-3">
+      <div class="mini-card"><h3>Overshoot</h3>Going <strong>past</strong> the setpoint instead of stopping on it — the line crossing the dashed line and carrying on.</div>
+      <div class="mini-card"><h3>Oscillate</h3>Swinging repeatedly above and below the setpoint instead of settling. Overshoot, then overshoot the other way, over and over.</div>
+      <div class="mini-card"><h3>Settle</h3>Stopping at a steady value and staying there. Settling <em>on</em> the setpoint is the goal; settling <em>near</em> it is a problem you will meet in Section 7.</div>
+    </div>
+    <p data-summary-skip><strong>Drag</strong> each chip into the box under the panel it describes (or click a chip, then click a box — same result). <strong>One chip belongs in none of them.</strong> Place your chips, then check.</p>
+
+    <div class="place-exercise diagram-breakout" data-exercise="curves">
+      <img src="diagrams/three-responses.svg" alt="Three charts of a measured value over time against the same setpoint: the first swings above and below it repeatedly, the second flattens out short of it leaving a permanent gap, the third settles onto it after one small overshoot." class="loop-diagram">
+      <button class="loop-target" id="curve-a" style="left:3%;top:75.9%;width:28%;height:15.3%;" data-answer="On/off" type="button" aria-label="Drop target (a)" title="Drag a chip here, or click a chip then click here"></button>
+      <button class="loop-target" id="curve-b" style="left:35.5%;top:75.9%;width:28%;height:15.3%;" data-answer="Proportional" type="button" aria-label="Drop target (b)" title="Drag a chip here, or click a chip then click here"></button>
+      <button class="loop-target" id="curve-c" style="left:68%;top:75.9%;width:28%;height:15.3%;" data-answer="PID" type="button" aria-label="Drop target (c)" title="Drag a chip here, or click a chip then click here"></button>
+    </div>
+    <div class="chip-row" id="curves-chips">
+      <button class="chip" draggable="true" data-label="On/off" type="button">On/off — never settles, swings past the setpoint both ways</button>
+      <button class="chip" draggable="true" data-label="Proportional" type="button">Proportional — settles, but short of the setpoint</button>
+      <button class="chip" draggable="true" data-label="PID" type="button">PID — settles on the setpoint</button>
+      <button class="chip" draggable="true" data-label="Open loop" type="button">Open loop — measures nothing at all</button>
+    </div>
+    <div class="selected-note" id="curves-selected-note"></div>
+    <button class="check-btn" id="curves-check-btn" type="button">Check my answer</button>
+    <div class="feedback" id="curves-feedback" hidden></div>
+    <div class="commit-explain" id="curves-explain" hidden>Read the three shapes as three sentences. The first one <strong>never stops correcting</strong> — it is always fully pushing one way or the other, so it flies past the target every time. The second <strong>gives up early</strong> — the closer it gets, the weaker its push, until the push is too weak to do anything and a permanent gap is left. The third <strong>gets there and stays there</strong>. The rest of this page is why each of those happens.<br><br>The option that belongs nowhere is <strong>open loop</strong>. An open loop system has no measurement, so there is no error and no response curve to draw — it isn't a fourth way of reacting to an error, it is the absence of one.</div>
+
+    <div class="takeaway"><h3>In one sentence</h3>On/off swings past the setpoint and never settles, proportional settles short of it, and PID settles on it — and the rest of this page explains why.</div>
+
+    <button class="next-btn" data-next="sec-3" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 3 -->
+  <section class="site-section" id="sec-3" data-title="All three are closed loop">
+    <div class="eyebrow">Part 1 · Classification</div>
+    <h2>Which of these three are closed loop?</h2>
+
+    <div class="commit-block" id="commit-onoff">
+      <p><strong>Commit before you read on.</strong> On/off control just flips something fully on or fully off. Does that make it open loop?</p>
+      <div class="single-select" data-correct="depends" id="ss-onoff">
+        <button data-value="yes" type="button">Yes — a switch isn't feedback</button>
+        <button data-value="no" type="button">No — on/off control is always closed loop</button>
+        <button data-value="depends" type="button">It depends on what makes it switch</button>
+      </div>
+      <p class="commit-warn" data-summary-skip>Choose one — the explanation only appears after you commit.</p>
+      <div class="feedback" id="ss-onoff-feedback" hidden></div>
+    </div>
+    <div class="commit-explain" id="ss-onoff-explain" hidden>It depends entirely on <strong>what decides the switching</strong>. If a measurement of the controlled variable decides it, the loop is closed. If a clock decides it, the loop is open. The switch itself proves nothing either way — which is Lesson 10's lesson, arriving again in a new costume.</div>
+
+    <blockquote class="def-quote"><strong>All three algorithm types are closed loop algorithms.</strong> Every one of them senses the system state, feeds that measurement back to calculate an error from the setpoint, and computes the control signal from that error. As long as what is measured is something the system's own actuators can affect, the loop is closed.</blockquote>
+
+    <div class="cards-3">
+      <div class="mini-card green"><h3>Closed loop on/off</h3>A heater on a <strong>thermostat</strong>. It measures the room temperature and switches the element on or off based on that reading. If the room cools down, it comes back on — because something measured it.</div>
+      <div class="mini-card red"><h3>Open loop on/off</h3>The same heater on a <strong>plug-in timer</strong>. On at 6pm, off at 9pm, regardless of whether the room is freezing or boiling. Two states, exactly as before, but nothing is ever measured.</div>
+    </div>
+
+    <blockquote class="def-quote amber">On/off is the one type of the three that can also be run <strong>open loop</strong>, because a switch can just as easily be driven by a clock as by a sensor. Proportional and PID cannot: both are defined as calculations performed <em>on the error</em>, and no error exists unless something is measured.</blockquote>
+
+    <div class="field-block">
+      <label for="q1a">Explain why all three algorithm types can be considered closed loop control algorithms.</label>
+      <textarea id="q1a" data-store="q1a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q1a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q1a-model" hidden>All three sense the system's state and feed that measurement back to calculate an error from a setpoint, and all three use that error to compute the control values sent to the actuators. As long as the measurement used to decide whether to act is something the system's own actuators can affect, the system is closed loop — that is true of on/off, proportional and PID alike.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q1b">Using a heater as your example, describe an open loop version and a closed loop version of <strong>on/off</strong> control, and explain what physically differs between them.</label>
+      <textarea id="q1b" data-store="q1b" rows="4"></textarea>
+      <button class="reveal-btn" data-reveal="q1b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q1b-model" hidden>A <strong>closed loop</strong> heater measures the actual room temperature with a thermostat and switches the heating element on or off based on that measurement — if the room cools, it turns back on. An <strong>open loop</strong> heater is switched on and off by a simple timer, regardless of what the temperature is actually doing. Both are "on/off" in the sense that the heater has exactly two states; only one of them measures anything.<br><br>What physically differs is the <strong>sensor and the path back from it</strong>: the thermostat version has a temperature measurement reaching the thing that decides, and the timer version has a clock there instead.</div>
+    </div>
+
+    <div class="quiz-block">
+      <p><strong>Quick check:</strong> why can't proportional control be run open loop?</p>
+      <div class="single-select" id="ss-prop-open" data-correct="noerror" data-explain="This is worth holding on to: proportional and PID are calculations performed on the error, so they cannot exist without one.">
+        <button data-value="noerror" type="button">Its control signal is calculated from the error, and there is no error without a measurement</button>
+        <button data-value="expensive" type="button">Open loop systems are too cheap to run the calculation</button>
+        <button data-value="actuator" type="button">Its actuators are always more powerful than an on/off system's</button>
+      </div>
+      <div class="feedback" id="ss-prop-open-feedback" hidden></div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>All three algorithms are closed loop, because all three calculate from a measurement — and on/off is the only one that can also be run open loop, by letting a clock do the switching instead of a sensor.</div>
+
+    <button class="next-btn" data-next="sec-4" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 4 -->
+  <section class="site-section" id="sec-4" data-title="On/off control">
+    <div class="eyebrow">Part 2 · On/off control</div>
+    <h2>Why "bang-bang"?</h2>
+
+    <blockquote class="def-quote">The system changes its output until it hits one limit, then reverses and changes until it hits the opposite limit, then reverses again — swinging back and forth between two limits. On. Off. On. Off. Like two bangs.</blockquote>
+
+    <div class="flow-row">
+      <div class="flow-box">Below the setpoint<br><strong>→ actuator ON</strong></div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box">Above the setpoint<br><strong>→ actuator OFF</strong></div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box">…and around again</div>
+    </div>
+
+    <div class="cards-3">
+      <div class="mini-card"><h3>What it is good at</h3>It is the simplest thing that could possibly work, it needs no <strong>tuning</strong> (no numbers to choose and adjust — you meet those in Section 6), and the actuator only ever has two states — which is exactly right when the actuator only <em>has</em> two states. A relay, a solenoid valve, a heating element: these are on or off, and nothing in between is available.</div>
+      <div class="mini-card amber"><h3>What it can't do</h3>It cannot ease in. The response is the same size whether the system is 40° off target or 0.4° off target, so it always arrives too hard and overshoots — which is why the first panel in Section 2 never settles.</div>
+    </div>
+
+    <p class="note-small">A <strong>relay</strong> is an electrically operated switch — a small control signal makes it click a much larger circuit open or closed. It is the classic on/off actuator, and the clicking is literal.</p>
+
+    <div class="field-block">
+      <label for="q2">Explain why on/off control is sometimes referred to as "bang-bang" control.</label>
+      <textarea id="q2" data-store="q2" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q2-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q2-model" hidden>The system changes its output until it hits one limit, then reverses and changes until it hits the opposite limit, then reverses again — swinging back and forth between the two limits, on then off then on, like two bangs.</div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>On/off control has exactly two responses, full on and full off, so it can never ease in as it gets close — it always arrives too hard.</div>
+
+    <button class="next-btn" data-next="sec-5" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 5 -->
+  <section class="site-section" id="sec-5" data-title="Hysteresis">
+    <div class="eyebrow">Part 2 · The problem right at the setpoint</div>
+    <h2>What happens when the reading sits exactly on the line?</h2>
+
+    <p>Picture the thermostat heater again, and suppose it switches the instant the reading crosses the setpoint, with no tolerance at all. The room reaches 20.0 °C, the element switches off. A draft takes it to 19.99 °C — on. The element warms the air by a fraction — off. On, off, on, off, several times a second.</p>
+
+    <blockquote class="def-quote red">Without any tolerance, a reading sitting almost exactly on the setpoint flicks the actuator on and off <strong>very rapidly</strong> — wearing out relays, motors and mechanical parts for no benefit whatsoever. The room is not getting any warmer for all that switching.</blockquote>
+
+    <h3>Hysteresis is the fix</h3>
+    <blockquote class="def-quote"><strong>Hysteresis</strong> adds a <em>tolerance band</em> around the setpoint. The system does not switch while the reading is inside the band. It overshoots slightly past one edge before switching, then undershoots past the other edge before switching back.</blockquote>
+
+    <div class="diagram-wrap diagram-breakout">
+      <img src="diagrams/hysteresis-band.svg" alt="Two charts. Without a tolerance band the measured value sits on the setpoint and the actuator switches dozens of times. With a band the value travels slowly between the upper and lower edges and switches only three times over the same stretch of time." class="loop-diagram">
+    </div>
+
+    <div class="cards-3">
+      <div class="mini-card green"><h3>What you gain</h3>Far fewer switching events. The actuator lasts longer, and the system stops wasting its time reacting to <strong>noise</strong> — the small random wobble in any real sensor reading, which is never perfectly steady even when the thing it is measuring is.</div>
+      <div class="mini-card amber"><h3>What it costs</h3>The value is never exactly on the setpoint any more — it is always somewhere inside the band, or just past one edge of it. You have traded a little accuracy for a lot of wear.</div>
+    </div>
+
+    <div class="quiz-block">
+      <p><strong>Quick check:</strong> a fridge switches its compressor on at 5 °C and off at 3 °C. What is that?</p>
+      <div class="single-select" id="ss-fridge" data-correct="band" data-explain="A band with edges at 3 °C and 5 °C. Inside it, nothing switches — which is why a fridge compressor runs in long cycles rather than buzzing on and off constantly.">
+        <button data-value="band" type="button">On/off control with a hysteresis band 2 °C wide</button>
+        <button data-value="prop" type="button">Proportional control, because there are two different numbers</button>
+        <button data-value="pid" type="button">PID control, because it holds a steady temperature</button>
+      </div>
+      <div class="feedback" id="ss-fridge-feedback" hidden></div>
+    </div>
+
+    <blockquote class="def-quote amber"><strong>You have already built one of these.</strong> In Lesson 9 you modified a line-following algorithm so the robot <em>stopped</em> instead of steering whenever its sensor reading was within 20 of the threshold, in either direction — rather than switching the instant the reading crossed it. That ±20 dead band is a tolerance band around a setpoint that stops rapid switching at the boundary. It is a primitive hysteresis band. You just didn't have the word for it yet.</blockquote>
+
+    <div class="field-block">
+      <label for="q3a">▲ Explain the purpose of hysteresis in on/off control algorithms.</label>
+      <textarea id="q3a" data-store="q3a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q3a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q3a-model" hidden>On/off control turns an actuator fully on or fully off depending on whether the system is above or below the setpoint. Without any tolerance, a reading sitting almost exactly on the setpoint would flick the actuator on and off very rapidly, which wears out components. Hysteresis introduces a tolerance band around the setpoint so the system does not switch while it is inside that band — instead it overshoots slightly past one edge of the band before switching, then undershoots past the other edge before switching back.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q3b">▲ Explain how Lesson 9's ±20 dead band is a primitive form of hysteresis, even though Lesson 9 never used the word.</label>
+      <textarea id="q3b" data-store="q3b" rows="4"></textarea>
+      <button class="reveal-btn" data-reveal="q3b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q3b-model" hidden>Instead of switching between "steer left" and "steer right" the instant the reading crossed the exact threshold, the modified algorithm added a tolerance of ±20 around the threshold where the robot did nothing (stopped) rather than reacting. That is a tolerance band around a setpoint that stops rapid switching right at the boundary — the same idea as hysteresis, just without the name, and without an actuator being protected from wear in that particular example.</div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>A hysteresis band is a tolerance zone around the setpoint where nothing switches, which stops the actuator flicking on and off at the boundary — and costs you sitting exactly on the setpoint.</div>
+
+    <button class="next-btn" data-next="sec-6" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 6 -->
+  <section class="site-section" id="sec-6" data-title="Proportional control">
+    <div class="eyebrow">Part 3 · Proportional control</div>
+    <h2>Scaling the response to the error</h2>
+
+    <blockquote class="def-quote"><strong>Proportional control</strong> sets the size of the response based on the <strong>size of the error</strong>. Bigger error, bigger and faster response — instead of always slamming to one extreme the way on/off control does.</blockquote>
+
+    <p>The calculation is one line:</p>
+    <p class="formula"><code>control signal = k × error</code></p>
+    <p><code>k</code> is the <strong>gain</strong>: a number chosen by whoever tunes the system, deciding how strongly it reacts. A large <code>k</code> makes the system aggressive and quick to overshoot; a small <code>k</code> makes it sluggish. Picking it is most of what "tuning" means.</p>
+
+    <div class="cards-3">
+      <div class="mini-card green"><h3>What you gain over on/off</h3>The response is no longer all-or-nothing. A claw approaching its target angle eases in gently instead of snapping shut at full force, and the system can slow down as it gets close — which is why the second panel in Section 2 does not oscillate.</div>
+      <div class="mini-card"><h3>This is the answer to Lesson 10's question</h3>Lesson 10 asked what a controller would need in order to react proportionally. Here it is: it needs the <em>size</em> of the error, not just its sign. On/off control only ever asks "am I above or below?" — proportional control asks "by how much?"</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q4">How does proportional control improve control of a system over on/off control?</label>
+      <textarea id="q4" data-store="q4" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q4-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q4-model" hidden>Proportional control sets the size of the response based on the size of the difference from the setpoint — the bigger the error, the bigger and faster the response. On/off control only ever has two responses (fully on or fully off) no matter how close or far the system is from the setpoint.</div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>Proportional control multiplies the error by a chosen number, so the response gets gentler as the system gets closer — it asks "by how much?", not just "above or below?".</div>
+
+    <button class="next-btn" data-next="sec-7" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 7 -->
+  <section class="site-section" id="sec-7" data-title="Steady-state error">
+    <div class="eyebrow">Part 3 · The weakness</div>
+    <h2>What happens as the error shrinks?</h2>
+
+    <div class="commit-block" id="commit-shrink">
+      <p><strong>Commit before you read on.</strong> A claw is controlled proportionally, with <code>control signal = k × error</code>. As it gets closer and closer to its target angle, what happens to the control signal?</p>
+      <div class="single-select" data-correct="smaller" id="ss-shrink">
+        <button data-value="smaller" type="button">It gets smaller and smaller</button>
+        <button data-value="same" type="button">It stays the same until the target is reached</button>
+        <button data-value="bigger" type="button">It gets bigger, to finish the job</button>
+      </div>
+      <p class="commit-warn" data-summary-skip>Choose one — the explanation only appears after you commit.</p>
+      <div class="feedback" id="ss-shrink-feedback" hidden></div>
+    </div>
+    <div class="commit-explain" id="ss-shrink-explain" hidden>Smaller — and that is exactly the problem. The control signal is <em>calculated from</em> the error, so as the error shrinks the signal shrinks with it. Eventually it is too small to move a real actuator at all, and everything stops with the job not quite finished.</div>
+
+    <h3>Worked example: our claw, controlled proportionally</h3>
+    <p>Suppose the claw's control signal is <code>k × error</code>, where the error is how many degrees away from the target angle it is, and <code>k = 2</code>.</p>
+
+    <p class="note-small">The control signal is just a number the controller works out — it has no units of its own. What matters is its <strong>size</strong> compared with what the actuator needs before it physically does anything. For this servo, that minimum is about <strong>1</strong>: a signal smaller than that has no visible effect at all.</p>
+
+    <div class="numeric-table" id="prop-table">
+      <table class="calc-table">
+        <tr><th>Error (degrees)</th><th>× k = 2</th><th>Control signal</th></tr>
+        <tr><td>40</td><td>→</td><td><input type="number" step="any" id="pt-40" data-store="pt-40" data-answer="80" aria-label="Control signal for an error of 40 degrees"></td></tr>
+        <tr><td>10</td><td>→</td><td><input type="number" step="any" id="pt-10" data-store="pt-10" data-answer="20" aria-label="Control signal for an error of 10 degrees"></td></tr>
+        <tr><td>1</td><td>→</td><td><input type="number" step="any" id="pt-1" data-store="pt-1" data-answer="2" aria-label="Control signal for an error of 1 degree"></td></tr>
+        <tr><td>0.2</td><td>→</td><td><input type="number" step="any" id="pt-02" data-store="pt-02" data-answer="0.4" aria-label="Control signal for an error of 0.2 degrees"></td></tr>
+      </table>
+      <button class="check-btn" id="prop-table-check" type="button">Check the table</button>
+      <div class="feedback" id="prop-table-feedback" hidden></div>
+    </div>
+
+    <div class="diagram-wrap diagram-breakout">
+      <img src="diagrams/proportional-shrink.svg" alt="A table of errors multiplied by a gain of two: 40 gives 80, 10 gives 20, 1 gives 2, and 0.2 gives 0.4 — which sits below the minimum signal the servo can act on." class="loop-diagram">
+    </div>
+
+    <blockquote class="def-quote amber">Once the error reaches about 0.2°, the calculated signal is 0.4 — below the roughly 1 the servo needs to move at all. The claw simply stops responding, sitting a small but permanent distance from where it was asked to be. The maths hasn't failed; the physical actuator just can't act on a signal that small.<br><br>This is <strong>steady-state error</strong>: the system settles a small, permanent distance from the setpoint instead of reaching it exactly.</blockquote>
+
+    <div class="field-block">
+      <label for="q5">What is a common weakness of proportional control algorithms when the error is small?</label>
+      <textarea id="q5" data-store="q5" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q5-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q5-model" hidden>When the error is small, the control value calculated (control signal = k × error) can become too small to actually move a real actuator. The system then settles a short, permanent distance away from the setpoint instead of reaching it exactly — this is called <strong>steady-state error</strong>.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q6b">Using the table above, explain what happens to the claw as its error shrinks toward zero.</label>
+      <textarea id="q6b" data-store="q6b" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q6b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q6b-model" hidden>Once the error drops to around 0.2°, the calculated control signal (0.4) is below the roughly 1 the servo actually needs to move — so the claw stops responding, sitting at a small but permanent error from its target angle. It is steady-state error with real numbers on it: the calculation still works, but the actuator cannot act on a signal that small.</div>
+    </div>
+
+    <p class="note-small">Worth noticing: a bigger <code>k</code> does not fix this. It shrinks the gap, but it also makes the system more aggressive everywhere else, so it starts to overshoot and oscillate — back toward the first panel in Section 2. Trading one problem for the other is not a solution, which is what the next section is for.</p>
+
+    <div class="takeaway"><h3>In one sentence</h3>Because proportional control calculates its push <em>from</em> the error, the push fades away as the error does — so the system stops just short of the setpoint, a permanent gap called steady-state error.</div>
+
+    <button class="next-btn" data-next="sec-8" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 8 -->
+  <section class="site-section" id="sec-8" data-title="PID control">
+    <div class="eyebrow">Part 4 · PID control</div>
+    <h2>Adding the integral and derivative terms</h2>
+
+    <p>PID keeps the proportional calculation and adds two more terms to it. The three are worked out on every pass of the loop and added together to make one control signal.</p>
+
+    <div class="cards-3">
+      <div class="mini-card"><h3>P — proportional</h3>Reacts to <strong>how big</strong> the error is right now. This is Section 6, unchanged.</div>
+      <div class="mini-card amber"><h3>I — integral</h3>Adds up the error <strong>over time</strong>. A small error that never goes away keeps accumulating in this term, growing until it is large enough to push the actuator past its minimum threshold — which closes the gap proportional control alone leaves behind.</div>
+      <div class="mini-card green"><h3>D — derivative</h3>Reacts to <strong>how fast the error is changing</strong>, not to its size. Coming in fast? <strong>Dampen</strong> the response — ease off the push now, so the system slows down before it sails past the target.</div>
+    </div>
+
+    <p>"Integral" and "derivative" are just names for those two operations: the integral is a running total, and the derivative is a rate of change. You do not need the calculus behind the words for this course — you need to be able to say what each term is measuring and which problem it fixes.</p>
+
+    <h3>The integral term, with the numbers from Section 7</h3>
+    <p>The claw was stuck 0.2° short of its target, because <code>2 × 0.2 = 0.4</code> and the servo needs about 1 to move. Watch what the integral term does to that same stuck claw. It keeps a running total of the error, adding the current error on every pass of the loop:</p>
+
+    <table class="calc-table worked">
+      <tr><th>Pass of the loop</th><th>Error still 0.2°</th><th>Running total (the I term)</th><th>Does the servo move?</th></tr>
+      <tr><td>1</td><td>+ 0.2</td><td>0.2</td><td>No</td></tr>
+      <tr><td>2</td><td>+ 0.2</td><td>0.4</td><td>No</td></tr>
+      <tr><td>3</td><td>+ 0.2</td><td>0.6</td><td>No</td></tr>
+      <tr><td>4</td><td>+ 0.2</td><td>0.8</td><td>No</td></tr>
+      <tr><td>5</td><td>+ 0.2</td><td class="hit">1.0</td><td class="hit">Yes — the gap closes</td></tr>
+    </table>
+
+    <p class="note-small">Nothing about the error changed. The error is still 0.2°, and proportional control still calculates the same useless 0.4 every single pass. What changed is that the <em>total</em> kept growing until it was big enough to act on. That is the whole trick: an error that refuses to go away eventually adds up to something the actuator cannot ignore. (Real controllers scale that total by its own chosen number, the same way <code>k</code> scales the proportional term — the shape of the idea is what matters here.)</p>
+
+    <div class="commit-block" id="commit-deriv">
+      <p><strong>Commit before you read on.</strong> The derivative term is often described as the part that "sees the overshoot coming". Is it predicting the future?</p>
+      <div class="single-select" data-correct="no" id="ss-deriv">
+        <button data-value="no" type="button">No — it measures how fast the error is changing right now</button>
+        <button data-value="yes" type="button">Yes — it forecasts where the system will be next</button>
+        <button data-value="past" type="button">No — it looks at the history of past errors</button>
+      </div>
+      <p class="commit-warn" data-summary-skip>Choose one — the explanation only appears after you commit.</p>
+      <div class="feedback" id="ss-deriv-feedback" hidden></div>
+    </div>
+    <div class="commit-explain" id="ss-deriv-explain" hidden>The derivative term is <strong>not</strong> a prediction. It is a measurement of how fast the error is changing <em>at this moment</em> — taken now, from the last two readings, not forecast. It <em>behaves</em> as though it anticipates the overshoot, because something closing on the target very fast is about to sail past it, but nothing about the future is being calculated.<br><br>If you picked "it looks at the history of past errors", that is the <strong>integral</strong> term — the running total. Worth separating the two now: I is the past added up, D is the present rate of change.</div>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Part 4 · Matching weaknesses to fixes</div>
+    <h2>Which term fixes which problem?</h2>
+    <p data-summary-skip>Drag each term onto the weakness it fixes (or click a term, then click a box). <strong>One term fixes neither</strong> — it is the one that caused them. Place them, then check.</p>
+
+    <div class="place-exercise" data-exercise="pid">
+      <table class="match-table">
+        <tr>
+          <td>The system settles a small, permanent distance short of the setpoint</td>
+          <td><button class="loop-target inline-target" id="pid-a" data-answer="Integral" type="button" aria-label="Drop target for the first weakness">drop a term here</button></td>
+        </tr>
+        <tr>
+          <td>The system approaches the setpoint fast and overshoots past it</td>
+          <td><button class="loop-target inline-target" id="pid-b" data-answer="Derivative" type="button" aria-label="Drop target for the second weakness">drop a term here</button></td>
+        </tr>
+      </table>
+    </div>
+    <div class="chip-row" id="pid-chips">
+      <button class="chip" draggable="true" data-label="Integral" type="button">Integral (I)</button>
+      <button class="chip" draggable="true" data-label="Derivative" type="button">Derivative (D)</button>
+      <button class="chip" draggable="true" data-label="Proportional" type="button">Proportional (P)</button>
+    </div>
+    <div class="selected-note" id="pid-selected-note"></div>
+    <button class="check-btn" id="pid-check-btn" type="button">Check my answer</button>
+    <div class="feedback" id="pid-feedback" hidden></div>
+    <div class="commit-explain" id="pid-explain" hidden><strong>Integral</strong> fixes the permanent gap: it accumulates that small ongoing error over time until the total is large enough to push the actuator past its minimum threshold. <strong>Derivative</strong> fixes the overshoot: it notices the error collapsing quickly and dampens the response before the system sails past the target. <strong>Proportional</strong> fixes neither — it is the term whose own behaviour produces both problems, which is exactly why the other two were added to it.</div>
+
+    <div class="video-wrap">
+      <a class="video-thumb-link" href="https://www.youtube.com/watch?v=fusr9eTceEo" target="_blank" rel="noopener noreferrer" aria-label="Watch &quot;Hardware Demo of a Digital PID Controller&quot; on YouTube (opens in a new tab)">
+        <img src="https://img.youtube.com/vi/fusr9eTceEo/hqdefault.jpg" alt="Video thumbnail: a bench demonstration of a motor under digital PID control">
+        <span class="video-play-badge" aria-hidden="true">▶</span>
+      </a>
+      <p class="video-link-caption" data-summary-skip>Optional — a real motor under PID control, 2:57. Opens on YouTube in a new tab.</p>
+      <details class="video-fallback">
+        <summary>Can't watch the video? Here is what it shows.</summary>
+        <p>A small DC motor with a flag on its shaft is held at a commanded position by a PID controller running on a microcontroller — the same job our servos do, but with the control loop out in the open instead of sealed inside the case. The terms are switched in one at a time, so you see proportional control alone settle near the target but not on it and wobble around it, and you see the response tighten as the integral and derivative terms are added. The part worth watching for is the <strong>disturbance</strong>: the presenter pushes the flag away from its target with a finger, and the controller drives it straight back and holds it there. Nothing told the controller it was being pushed — it measured the error that the push created and acted on it. That is the whole idea of closed loop control in one gesture.</p>
+      </details>
+    </div>
+
+    <div class="field-block">
+      <label for="q7a">Describe how the <strong>integral</strong> component improves on simple proportional control, referring to your answer about steady-state error.</label>
+      <textarea id="q7a" data-store="q7a" rows="4"></textarea>
+      <button class="reveal-btn" data-reveal="q7a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q7a-model" hidden>The integral term adds up the error over time. If proportional control alone stabilises the system a small distance short of the setpoint (steady-state error), that small error keeps accumulating in the integral term, growing larger and larger until it is big enough to push the control signal past the actuator's minimum threshold and close the remaining gap.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q7b">Describe how the <strong>derivative</strong> component improves on simple proportional control.</label>
+      <textarea id="q7b" data-store="q7b" rows="4"></textarea>
+      <button class="reveal-btn" data-reveal="q7b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q7b-model" hidden>The derivative term reacts to the <strong>rate of change</strong> of the error, not the error's size. If the system is approaching the setpoint quickly, the derivative term dampens the response to reduce overshoot; if the error is changing quickly in the wrong direction, it strengthens the response. It is a correction based on speed of approach, layered on top of the proportional and integral terms.</div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>PID adds two terms to proportional control: the integral (the error added up, which closes a permanent gap) and the derivative (how fast the error is changing, which stops the overshoot) — and the derivative measures the present, it does not predict the future.</div>
+
+    <button class="next-btn" data-next="sec-9" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 9 -->
+  <section class="site-section" id="sec-9" data-title="Classify real systems">
+    <div class="eyebrow">Part 5 · The checkpoint</div>
+    <h2>Which algorithm is this system using?</h2>
+
+    <p>You now have everything you need to work backwards: read what a system <em>does</em>, and name the algorithm behind it. Two questions per system, in this order.</p>
+
+    <div class="cards-3">
+      <div class="mini-card green"><h3>1 · Which algorithm?</h3>Decide from the <strong>behaviour described</strong>, not from how modern or impressive the machine sounds.<br><br>Two states only → <strong>on/off</strong>. Response scales with the error but leaves a permanent gap → <strong>proportional</strong>. Arrives fast, no overshoot, holds exactly → <strong>PID</strong>.</div>
+      <div class="mini-card amber"><h3>2 · Open or closed loop?</h3>A separate question, using Lesson 10's test: is the <strong>controlled variable</strong> — the one thing the system is trying to hold at a value — measured, and does the system change its action because of that measurement?<br><br>Answering this second is the point — the algorithm type does not tell you the answer, and the answer does not tell you the algorithm type.</div>
+    </div>
+
+    <h3>Worked example — an electric kettle</h3>
+    <blockquote class="def-quote"><strong>Behaviour:</strong> heats at full power until the water boils, then switches off completely and stays off.<br><br><strong>1 · Which algorithm?</strong> Two states, full power or nothing, switching at a limit → <strong>on/off</strong>. There is no scaling: the kettle does not ease off as the water approaches 100 °C.<br><br><strong>2 · Open or closed loop?</strong> The controlled variable is water temperature. A thermal sensor detects boiling and that measurement is what switches the element off → <strong>closed loop</strong>. (A kettle you have to switch off yourself is open loop — same two states, no measurement.)</blockquote>
+
+    <p data-summary-skip>Now do the same for each system below. Question 2 unlocks once you have answered question 1.</p>
+
+    <div class="sys-grid" id="sys-grid"></div>
+    <p class="score-line" id="sys-score"></p>
+
+    <div class="takeaway"><h3>In one sentence</h3>Which algorithm a system uses and whether its loop is open or closed are two separate questions — a timer-driven heater and a fridge are both on/off, and only one of them measures anything.</div>
+
+    <button class="next-btn" data-next="sec-10" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ 10 -->
+  <section class="site-section" id="sec-10" data-title="Our own build">
+    <div class="eyebrow">Part 6 · Our own arm</div>
+    <h2>Which of these three does our build actually use?</h2>
+
+    <div class="commit-block" id="commit-move">
+      <p><strong>Commit before you read on.</strong> In Lesson 19 you will use a function <code>move(start, end)</code> that steps a joint between two angles across about 100 small increments, instead of snapping straight there. The movement comes out visibly smoother. <strong>Is that PID control?</strong></p>
+      <div class="single-select" data-correct="no" id="ss-move">
+        <button data-value="no" type="button">No</button>
+        <button data-value="yes" type="button">Yes — smooth, controlled motion is what PID produces</button>
+        <button data-value="partly" type="button">It is the P term only, without I or D</button>
+      </div>
+      <p class="commit-warn" data-summary-skip>Choose one — the explanation only appears after you commit.</p>
+      <div class="feedback" id="ss-move-feedback" hidden></div>
+    </div>
+    <div class="commit-explain" id="ss-move-explain" hidden>No — and the reason is worth more than the answer. <code>move(start, end)</code> never <strong>measures</strong> anything. It follows a fixed path between two angles it was given, and it would run exactly the same way if the arm were jammed, unplugged, or missing. With no measurement there is no error, and with no error there is nothing for any of P, I or D to be calculated from. Smoother is not the same as controlled.</div>
+
+    <div class="diagram-wrap diagram-breakout">
+      <img src="diagrams/not-pid.svg" alt="Our own build in two rows: the Lessons 17 to 18 pick-and-place trigger reads the LDR, compares it with a threshold, runs the routine and reads again, closing a loop on pad occupancy; the Lesson 19 move function steps from a start angle to an end angle with no measurement and no return path." class="loop-diagram">
+    </div>
+
+    <div class="cards-3">
+      <div class="mini-card amber"><h3>Lessons 17–18 — the pick-and-place trigger</h3>The <strong>LDR</strong> (light dependent resistor — a component whose resistance changes with the light falling on it, so the voltage across it is a read-out of brightness) sits under the pickup pad. When its reading crosses a <strong>threshold</strong> — a fixed value you choose, which the reading is compared against, like "below 400 means something is sitting on the pad" — the pick-up routine triggers. Two states, switching at a limit: <strong>on/off control</strong>, and <strong>closed loop on pad occupancy</strong> — exactly what Lesson 10 concluded about this same routine.</div>
+      <div class="mini-card red"><h3>Lesson 19 — performance tuning</h3><code>move(start, end)</code> steps across ~100 increments so the motion looks continuous instead of jumping. This is <strong>open loop interpolation</strong> — <em>interpolation</em> meaning filling in the values between two known ones. It smooths the <em>path</em>; it does not correct for anything.</div>
+    </div>
+
+    <blockquote class="def-quote red"><strong>This course does not build a PID controller.</strong> Our arm's real code stays on/off for the pick-and-place trigger and uses open loop smoothing for movement — on purpose, because of what fits in a six-week delivery. PID is examinable: you need to understand it and use the vocabulary. It is not something you will write code for on this arm. Telling the difference between "smoother" and "PID" is exactly the skill being tested here.</blockquote>
+
+    <div class="field-block">
+      <label for="q10a">Classify the Lessons 17–18 pick-and-place trigger as on/off, proportional or PID control. Justify your answer.</label>
+      <textarea id="q10a" data-store="q10a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q10a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q10a-model" hidden>On/off control. The LDR reading either crosses the threshold or it does not — there is no scaling of the response based on how far above or below the threshold the reading is, just a trigger that switches the pick-up routine on.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q10b">Using the two-question test from Lesson 10, is that routine closed loop or open loop? Justify it.</label>
+      <textarea id="q10b" data-store="q10b" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q10b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q10b-model" hidden>Closed loop, on pad occupancy. Controlled variable: whether the pad is covered. The system measures that variable (the LDR reading) and changes its action (whether it runs the pick-up routine) because of the measurement. Both halves of the test pass — matching what Lesson 10 established about this exact routine.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q11a">Explain why stepping a joint through ~100 increments makes the arm's movement look smoother.</label>
+      <textarea id="q11a" data-store="q11a" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="q11a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q11a-model" hidden>Snapping a servo directly from one angle to another produces a sudden jump — visually abrupt and mechanically harsh. Stepping through roughly 100 small increments between the start and end positions means the joint passes through many intermediate angles in sequence, which looks like continuous, smooth motion instead of a jump.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q11b">Explain why that stepping function is <strong>not</strong> PID control, even though it also produces smoother motion. What is missing that a real PID controller would have?</label>
+      <textarea id="q11b" data-store="q11b" rows="4"></textarea>
+      <button class="reveal-btn" data-reveal="q11b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="q11b-model" hidden><code>move(start, end)</code> follows a fixed, predetermined path between two known positions — it never measures where the arm actually is and never reacts to an error. A PID controller measures the system's actual state on every pass of the loop and continuously recalculates its output from the error, the accumulated error, and the rate of change of the error. <code>move(start, end)</code> is <strong>open loop interpolation</strong> — smoothing the <em>path</em>, not correcting for any deviation from it. What is missing is the sensing and feedback that would make it closed loop, and the proportional/integral/derivative calculation that would make it PID.</div>
+    </div>
+
+    <div class="takeaway"><h3>In one sentence</h3>Our arm uses on/off control, closed loop on whether the pad is covered; Lesson 19's smoothing function measures nothing at all, so it is open loop interpolation and not PID, however smooth it looks.</div>
+
+    <button class="next-btn" data-next="sec-ext" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ ext -->
+  <section class="site-section" id="sec-ext" data-title="Extension">
+    <div class="eyebrow">▲ Extension — beyond the required content</div>
+    <h2>Three harder questions</h2>
+
+    <div class="field-block">
+      <label for="ext-a">A student builds a PID controller but sets the <strong>derivative</strong> term far too high. Predict what happens to the system's response, remembering that the derivative term reacts to the rate of change of the error rather than to the error itself.</label>
+      <textarea id="ext-a" data-store="ext-a" rows="4"></textarea>
+      <button class="reveal-btn" data-reveal="ext-a-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="ext-a-model" hidden>A derivative term set far too high overreacts to any fast change in the error, including small, ordinary changes and sensor noise — producing a jittery, oscillating or even unstable response, since the controller is now dominated by how fast the error is changing rather than by the error itself or its accumulated history.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="ext-b">Explain why an on/off controller, no matter how its hysteresis band is tuned, can never settle exactly on the setpoint the way a well-tuned PID controller can.</label>
+      <textarea id="ext-b" data-store="ext-b" rows="4"></textarea>
+      <button class="reveal-btn" data-reveal="ext-b-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="ext-b-model" hidden>On/off control only ever switches the actuator fully on or fully off around a tolerance band — it has no way to hold a value exactly, only to oscillate within (or just outside) the band. A well-tuned PID controller calculates a continuously varying control signal that can settle precisely at the setpoint, because its output is not restricted to two states.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="ext-c">PID is more sophisticated than proportional or on/off control, but it is not always the right choice. Suggest one reason a designer might <strong>deliberately</strong> choose a simpler algorithm for a real system, knowing PID would perform better.</label>
+      <textarea id="ext-c" data-store="ext-c" rows="4"></textarea>
+      <button class="reveal-btn" data-reveal="ext-c-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="ext-c-model" hidden>Any well-reasoned case counts. PID has to be <em>tuned</em> — someone has to choose the proportional, integral and derivative constants, which takes time, testing and expertise. A simpler algorithm is cheaper to build, easier to debug, and good enough when the task is repeatable and does not demand high precision. Some actuators only have two states anyway, so there is nothing for a proportional signal to do. This is exactly the reasoning behind our own arm's build staying on/off and open loop interpolation rather than PID.</div>
+    </div>
+
+    <button class="next-btn" data-next="sec-wrap" type="button">Continue →</button>
+  </section>
+
+  <!-- ============================================================ wrap -->
+  <section class="site-section" id="sec-wrap" data-title="Wrap-up">
+    <div class="eyebrow">Wrap-up</div>
+    <h2>Today's key ideas</h2>
+    <div class="cards-3">
+      <div class="mini-card green"><h3>1 · Three algorithms, one job</h3>On/off, proportional and PID all sense the state and react to an error. They differ only in <em>how</em> they react — two states, scaled to the error, or scaled plus accumulated plus rate of change.</div>
+      <div class="mini-card"><h3>2 · Hysteresis you already built</h3>Lesson 9's ±20 dead band was a hysteresis band before you had the word for it. It buys actuator life at the cost of never sitting exactly on the setpoint.</div>
+      <div class="mini-card amber"><h3>3 · More sophisticated ≠ always better</h3>PID fixes real weaknesses, and costs real tuning effort. Our own build stays simple on purpose — and smoother movement is not the same thing as PID.</div>
+    </div>
+
+    <div class="field-block">
+      <label for="q-hook-back">Go back to your answer in Section 1 — what you thought a machine should do differently when it is far from its target versus very close to it. Name the algorithm type that behaves the way you described, and say what its weakness is.</label>
+      <textarea id="q-hook-back" data-store="hook-back" rows="3"></textarea>
+      <button class="reveal-btn" data-reveal="hook-back-model" type="button">Check against a model answer</button>
+      <div class="model-answer" id="hook-back-model" hidden>Most people describe something proportional: push hard when far away, ease off when close. That instinct is right, and it is exactly what proportional control does — its weakness is that easing off never stops, so the push eventually becomes too small to move anything and a permanent gap is left (steady-state error), which is what the integral term exists to fix.<br><br>If you described switching fully on and fully off, that is on/off control, and its weakness is that it can never settle — it always arrives too hard and swings past the target.</div>
+    </div>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Every word this lesson used</div>
+    <h2>Vocabulary check</h2>
+    <p data-summary-skip>If any of these is still fuzzy, the section named beside it is where it is explained.</p>
+
+    <table class="glossary">
+      <tr><td><strong>Setpoint</strong></td><td>The value the system is trying to reach or hold. <span class="where">§1</span></td></tr>
+      <tr><td><strong>Error</strong></td><td>Setpoint minus the measured value — how far off it currently is. <span class="where">§1</span></td></tr>
+      <tr><td><strong>Controlled variable</strong></td><td>The one thing the system is trying to hold at the setpoint. <span class="where">§1</span></td></tr>
+      <tr><td><strong>Control signal</strong></td><td>The number the controller works out and sends to the actuator. <span class="where">§1</span></td></tr>
+      <tr><td><strong>Overshoot</strong></td><td>Going past the setpoint instead of stopping on it. <span class="where">§2</span></td></tr>
+      <tr><td><strong>Oscillate</strong></td><td>Swinging above and below the setpoint over and over instead of settling. <span class="where">§2</span></td></tr>
+      <tr><td><strong>On/off (bang-bang) control</strong></td><td>Two states only — full on or full off — switching at a limit. <span class="where">§4</span></td></tr>
+      <tr><td><strong>Hysteresis</strong></td><td>A tolerance band around the setpoint where nothing switches, so the actuator stops flicking on and off. <span class="where">§5</span></td></tr>
+      <tr><td><strong>Dead band</strong></td><td>The same idea under Lesson 9's name — the ±20 zone where the robot did nothing. <span class="where">§5</span></td></tr>
+      <tr><td><strong>Proportional control</strong></td><td>Control signal = gain × error, so the response scales with how far off the system is. <span class="where">§6</span></td></tr>
+      <tr><td><strong>Gain (<code>k</code>)</strong></td><td>The number the error is multiplied by. Choosing it is most of what tuning means. <span class="where">§6</span></td></tr>
+      <tr><td><strong>Steady-state error</strong></td><td>The small permanent gap left when the control signal shrinks below what the actuator can act on. <span class="where">§7</span></td></tr>
+      <tr><td><strong>PID control</strong></td><td>Proportional plus integral plus derivative, added together into one control signal. <span class="where">§8</span></td></tr>
+      <tr><td><strong>Integral term</strong></td><td>The error added up over time — it closes the steady-state gap. <span class="where">§8</span></td></tr>
+      <tr><td><strong>Derivative term</strong></td><td>How fast the error is changing right now — it dampens the approach and prevents overshoot. <span class="where">§8</span></td></tr>
+      <tr><td><strong>Threshold</strong></td><td>A fixed value a reading is compared against, to decide whether to act. <span class="where">§10</span></td></tr>
+      <tr><td><strong>Open loop interpolation</strong></td><td>Stepping between two known values along a fixed path, measuring nothing — what Lesson 19's smoothing does. <span class="where">§10</span></td></tr>
+    </table>
+
+    <div class="next-lesson-note"><strong>Next lesson:</strong> the arms come back out. Lesson 12 is servo calibration — finding each joint's real working range, and checking the wiring you did in Lesson 7 against your own diagram. After three lessons of theory, this is where the vocabulary meets a machine that can strip its own gears.</div>
+    <div class="exit-ticket-note">
+      <strong>Before you go:</strong> complete your exit ticket in Canvas — closed book, no notes. (The exit ticket questions are not repeated here.)
+    </div>
+    <div class="done-banner" id="done-banner">🎉 You've reached the end of Lesson 11.</div>
+
+    <hr class="section-rule">
+    <div class="eyebrow">Your work</div>
+    <h2>Download a summary of your answers</h2>
+    <p data-summary-skip>This page saves your progress in this browser only — nothing is sent anywhere automatically. Add your name below to download or print your notes and answers, for revision or to hand in.</p>
+
+    <div class="summary-fields">
+      <label for="summary-name">Your name</label>
+      <input type="text" id="summary-name" placeholder="Type your name" autocomplete="off">
+      <p class="summary-hint" id="summary-name-hint">Enter your name to enable the download.</p>
+    </div>
+    <button class="check-btn" id="summary-btn" type="button" disabled>⬇ Download / print my work summary</button>
+
+    <div id="work-summary" class="print-summary" hidden></div>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>

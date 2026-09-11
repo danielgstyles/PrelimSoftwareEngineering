@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Same tokens as the lesson sites, so the homepage and the lessons read as one
+   thing rather than two. */
+:root {
+  --navy: #0D1B2A;
+  --navy-mid: #122335;
+  --navy-card: #16283B;
+  --cyan: #00E5FF;
+  --cyan-dim: #0099BB;
+  --slate: #8DA9C4;
+  --white: #F0F6FF;
+  --amber: #FFB347;
+  --green: #4ECDC4;
+  --border: #1E3A52;
+  --content-width: 1040px;
+}
+
+* { box-sizing: border-box; }
+html { font-size: 19px; }
+body {
+  margin: 0;
+  background: var(--navy);
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  line-height: 1.65;
+}
+
+.site-header {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 56px 24px 12px;
+  text-align: center;
+}
+.eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72em;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--cyan);
+  margin-bottom: 0.6em;
+}
+.site-header h1 { font-size: 2.3em; margin: 0 0 0.2em; }
+.site-header .sub { color: var(--slate); margin: 0 auto; max-width: 640px; }
+
+main { max-width: var(--content-width); margin: 0 auto; padding: 0 24px 60px; }
+
+.unit-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--slate);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin: 36px 0 20px;
+}
+
+.lesson-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 18px;
+}
+
+.lesson-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--navy-card);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--cyan);
+  border-radius: 6px;
+  padding: 20px 22px 18px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.lesson-card:hover, .lesson-card:focus-visible {
+  border-color: var(--cyan);
+  transform: translateY(-2px);
+  outline: none;
+}
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.7em;
+}
+.card-number { color: var(--cyan); }
+.card-time { color: var(--slate); }
+.lesson-card h2 { font-size: 1.3em; margin: 0 0 0.15em; line-height: 1.25; }
+.card-sub { color: var(--amber); margin: 0 0 0.8em; font-size: 0.92em; }
+.card-blurb { margin: 0 0 1em; font-size: 0.92em; color: var(--white); }
+.card-topics {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0 0 1.2em;
+}
+.card-topics li {
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 0.75em;
+  color: var(--slate);
+  font-family: 'Space Mono', monospace;
+}
+.card-go {
+  margin-top: auto;
+  color: var(--cyan);
+  font-weight: 600;
+  font-size: 0.92em;
+}
+
+.how-to {
+  margin-top: 44px;
+  background: var(--navy-mid);
+  border-left: 4px solid var(--green);
+  border-radius: 4px;
+  padding: 20px 26px;
+}
+.how-to h3 {
+  color: var(--green);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.74em;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin: 0 0 0.8em;
+}
+.how-to ul { margin: 0; padding-left: 1.2em; }
+.how-to li { margin-bottom: 0.55em; font-size: 0.95em; }
+.how-to strong { color: var(--cyan); }
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 20px 24px 40px;
+  text-align: center;
+}
+footer p {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  color: var(--slate);
+  font-size: 0.8em;
+  font-family: 'Space Mono', monospace;
+}
+
+@media (max-width: 600px) {
+  .site-header h1 { font-size: 1.7em; }
+  .site-header { padding-top: 36px; }
+}

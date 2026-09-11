@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 380" width="1000" height="380" role="img" aria-label="Closed loop block diagram: setpoint into a comparison, then controller, actuator and output, with a sensor measuring the output and feeding it back into the comparison">
+  <defs>
+    <marker id="arr-cyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#00E5FF"/>
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#FFB347"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="380" fill="#0D1B2A"/>
+
+  <text x="30" y="40" font-family="'Space Mono', monospace" font-size="15" letter-spacing="3" fill="#00E5FF">CLOSED LOOP CONTROL</text>
+
+  <!-- boxes: x = 30(150), 215(200), 450(150), 635(150), 820(150) ; y = 80 ; h = 92 -->
+  <g>
+    <rect x="30" y="80" width="150" height="92" fill="#122335" stroke="#0099BB" stroke-width="2" rx="3"/>
+    <text x="105" y="118" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="17" font-weight="700" fill="#F0F6FF">SETPOINT</text>
+    <text x="105" y="142" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="12.5" fill="#8DA9C4">what you asked for</text>
+  </g>
+  <g>
+    <rect x="215" y="80" width="200" height="92" fill="#122335" stroke="#FFB347" stroke-width="2.5" rx="3"/>
+    <text x="315" y="118" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="17" font-weight="700" fill="#FFB347">COMPARE</text>
+    <text x="315" y="143" text-anchor="middle" font-family="'Space Mono', monospace" font-size="11.5" fill="#8DA9C4">error = setpoint − measured</text>
+  </g>
+  <g>
+    <rect x="450" y="80" width="150" height="92" fill="#122335" stroke="#0099BB" stroke-width="2" rx="3"/>
+    <text x="525" y="118" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="17" font-weight="700" fill="#F0F6FF">CONTROLLER</text>
+    <text x="525" y="142" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="12.5" fill="#8DA9C4">acts on the error</text>
+  </g>
+  <g>
+    <rect x="635" y="80" width="150" height="92" fill="#122335" stroke="#0099BB" stroke-width="2" rx="3"/>
+    <text x="710" y="118" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="17" font-weight="700" fill="#F0F6FF">ACTUATOR</text>
+    <text x="710" y="142" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="12.5" fill="#8DA9C4">does the action</text>
+  </g>
+  <g>
+    <rect x="820" y="80" width="150" height="92" fill="#122335" stroke="#0099BB" stroke-width="2" rx="3"/>
+    <text x="895" y="118" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="17" font-weight="700" fill="#F0F6FF">OUTPUT</text>
+    <text x="895" y="142" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="12.5" fill="#8DA9C4">what actually happened</text>
+  </g>
+
+  <line x1="182" y1="126" x2="211" y2="126" stroke="#00E5FF" stroke-width="2.5" marker-end="url(#arr-cyan)"/>
+  <line x1="417" y1="126" x2="446" y2="126" stroke="#00E5FF" stroke-width="2.5" marker-end="url(#arr-cyan)"/>
+  <line x1="602" y1="126" x2="631" y2="126" stroke="#00E5FF" stroke-width="2.5" marker-end="url(#arr-cyan)"/>
+  <line x1="787" y1="126" x2="816" y2="126" stroke="#00E5FF" stroke-width="2.5" marker-end="url(#arr-cyan)"/>
+
+  <!-- sensor + feedback path -->
+  <g>
+    <rect x="600" y="258" width="240" height="72" fill="#122335" stroke="#4ECDC4" stroke-width="2.5" rx="3"/>
+    <text x="720" y="288" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="17" font-weight="700" fill="#4ECDC4">SENSOR</text>
+    <text x="720" y="310" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="12.5" fill="#8DA9C4">measures the actual output</text>
+  </g>
+
+  <path d="M 895 174 L 895 294 L 846 294" fill="none" stroke="#FFB347" stroke-width="2.5" marker-end="url(#arr-amber)"/>
+  <path d="M 600 294 L 315 294 L 315 178" fill="none" stroke="#FFB347" stroke-width="2.5" marker-end="url(#arr-amber)"/>
+
+  <text x="455" y="282" text-anchor="middle" font-family="'Space Mono', monospace" font-size="13" fill="#FFB347">feedback path</text>
+
+  <text x="500" y="358" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="14.5" fill="#8DA9C4">The measurement returns to a <tspan fill="#FFB347">comparison with the setpoint</tspan> — that is where the error is formed. Remove it and the loop is open.</text>
+</svg>
